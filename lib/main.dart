@@ -5,6 +5,8 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'screens/login_screen.dart';
 
 import 'database/database_helper.dart';
+import 'services/supabase_sync_service.dart';
+import 'services/telegram_service.dart';
 import 'features/smart_assistant/smart_assistant_overlay.dart';
 
 void main() async {
@@ -16,6 +18,14 @@ void main() async {
   
   // Run background/maintenance tasks
   await DatabaseHelper.instance.performDailyMaintenance();
+  
+  // Test Telegram Bot (Hanya untuk testing, nanti bisa dihapus)
+  await TelegramService().sendMessage('👋 Halo! Bot Telegram untuk Aplikasi Kasir berhasil terhubung!');
+  
+  // Run initial Supabase sync (non-blocking)
+  SupabaseSyncService().syncUnsyncedData().catchError((e) {
+    print('Initial sync error: $e');
+  });
 
   runApp(const MyApp());
 }

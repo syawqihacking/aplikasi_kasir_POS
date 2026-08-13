@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import '../services/telegram_service.dart';
+import '../services/export_service.dart';
+import '../services/supabase_sync_service.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -31,30 +34,99 @@ class DatabaseHelper {
     try {
       await database;
       final settings = await getSettings();
-      final lastMaintenance = settings['last_maintenance_date'];
-      final today = DateTime.now().toIso8601String().split('T')[0];
+      final lastReportDate = settings['last_report_date'] ?? settings['last_maintenance_date']; 
+      final lastBackupDate = settings['last_backup_date'] ?? settings['last_maintenance_date']; 
+      final now = DateTime.now();
+      final todayStr = now.toIso8601String().split('T')[0];
+      final yesterdayStr = now.subtract(const Duration(days: 1)).toIso8601String().split('T')[0];
 
-      if (lastMaintenance != today) {
-        // 1. Perform Vacuum
+      final tgService = TelegramService();
+      final isTgConfigured = await tgService.isConfigured();
+
+      // 1. Laporan Harian (Setiap hari untuk transaksi kemarin)
+      if (lastReportDate != todayStr) {
+        await SupabaseSyncService().cleanupDownloadedData();
+
+        if (isTgConfigured) {
+          final db = await database;
+          final txns = await db.query('transactions', where: 'created_at LIKE ?', whereArgs: ['$yesterdayStr%']);
+          
+          if (txns.isNotEmpty) {
+            final dbPath = await getDatabasePath();
+            final reportDir = Directory(join(dirname(dbPath), 'reports'));
+            if (!await reportDir.exists()) await reportDir.create();
+            final reportPath = join(reportDir.path, 'Daily_Report_$yesterdayStr.pdf');
+            
+            double totalSales = 0;
+            List<List<dynamic>> rows = [];
+            for (var txn in txns) {
+              totalSales += (txn['grand_total'] as num?)?.toDouble() ?? 0.0;
+              rows.add([
+                txn['invoice_no'],
+                txn['created_at'].toString().substring(11, 16),
+                txn['payment_method'],
+                txn['grand_total'],
+              ]);
+            }
+            
+            await ExportService.exportToPdf(
+              filePath: reportPath,
+              title: 'Laporan Penjualan $yesterdayStr',
+              headers: ['Invoice', 'Waktu', 'Metode', 'Total'],
+              rows: rows,
+              extraSections: [
+                ReportSection(
+                  title: 'Ringkasan',
+                  headers: ['Deskripsi', 'Jumlah'],
+                  rows: [
+                    ['Total Transaksi', txns.length],
+                    ['Total Pendapatan', totalSales],
+                  ],
+                )
+              ],
+            );
+            
+            await tgService.sendDocument(File(reportPath), caption: '📊 Laporan Penjualan Harian: $yesterdayStr');
+          }
+        }
+        await saveSetting('last_report_date', todayStr);
+        await saveSetting('last_maintenance_date', todayStr); // legacy
+      }
+
+      // 2. Backup Database Otomatis (Setiap 15 Hari)
+      bool needsBackup = false;
+      if (lastBackupDate == null || lastBackupDate.toString().isEmpty) {
+        needsBackup = true;
+      } else {
+        try {
+          final parsed = DateTime.parse(lastBackupDate.toString());
+          if (now.difference(parsed).inDays.abs() >= 15) {
+            needsBackup = true;
+          }
+        } catch(e) {
+          needsBackup = true;
+        }
+      }
+
+      if (needsBackup) {
         await vacuumDatabase();
-
-        // 2. Perform Auto Backup
         final dbPath = await getDatabasePath();
         final file = File(dbPath);
         if (await file.exists()) {
           final backupDir = Directory(join(dirname(dbPath), 'backups'));
-          if (!await backupDir.exists()) {
-            await backupDir.create();
+          if (!await backupDir.exists()) await backupDir.create();
+          final backupFile = join(backupDir.path, 'dashdock_auto_backup_$todayStr.db');
+          final savedFile = await file.copy(backupFile);
+          
+          if (isTgConfigured) {
+            await tgService.sendDocument(savedFile, caption: '✅ Backup Database Mingguan: $todayStr');
           }
-          final backupFile = join(backupDir.path, 'dashdock_auto_backup_$today.db');
-          await file.copy(backupFile);
         }
-
-        // 3. Update last maintenance date
-        await saveSetting('last_maintenance_date', today);
-        await logActivity('MAINTENANCE', 'system', 'Performed daily database vacuum and auto backup');
+        await saveSetting('last_backup_date', todayStr);
+        await logActivity('MAINTENANCE', 'system', 'Performed weekly database vacuum and backup');
       }
     } catch (e) {
+      print('Maintenance error: $e');
     }
   }
 
@@ -87,7 +159,7 @@ class DatabaseHelper {
     return await databaseFactory.openDatabase(
       path,
       options: OpenDatabaseOptions(
-        version: 9,
+        version: 11,
         onCreate: _createDB,
         onOpen: (db) async {
           // Ensure roles_permissions is seeded even for databases
@@ -393,6 +465,21 @@ class DatabaseHelper {
               }
             }
           }
+          if (oldVersion < 10) {
+            try {
+              await db.execute('ALTER TABLE transactions ADD COLUMN synced INTEGER DEFAULT 0');
+              await db.execute('ALTER TABLE cash_movements ADD COLUMN synced INTEGER DEFAULT 0');
+            } catch (e) {
+              // columns might already exist
+            }
+          }
+          if (oldVersion < 11) {
+            try {
+              await db.execute('ALTER TABLE users ADD COLUMN synced INTEGER DEFAULT 0');
+            } catch (e) {
+              // columns might already exist
+            }
+          }
         }
       ),
     );
@@ -407,7 +494,8 @@ class DatabaseHelper {
         role TEXT NOT NULL,
         full_name TEXT NOT NULL,
         is_active INTEGER DEFAULT 1,
-        created_at TEXT
+        created_at TEXT,
+        synced INTEGER DEFAULT 0
       )
     ''');
 
@@ -542,7 +630,8 @@ class DatabaseHelper {
         change_amount REAL,
         payment_method TEXT,
         cashier_id INTEGER,
-        created_at TEXT
+        created_at TEXT,
+        synced INTEGER DEFAULT 0
       )
     ''');
 
@@ -642,6 +731,7 @@ class DatabaseHelper {
         reason TEXT,
         created_by INTEGER,
         created_at TEXT,
+        synced INTEGER DEFAULT 0,
         FOREIGN KEY (shift_id) REFERENCES cash_shifts (id)
       )
     ''');
@@ -964,6 +1054,9 @@ class DatabaseHelper {
         ''', [qty, productId]);
       }
     });
+
+    // Trigger sync in background
+    SupabaseSyncService().syncUnsyncedData().catchError((e) => print('Sync error: $e'));
   }
 
   Future<List<Map<String, dynamic>>> getTransactions({DateTime? startDate, DateTime? endDate}) async {
@@ -1171,6 +1264,8 @@ class DatabaseHelper {
       'created_by': userId,
       'created_at': DateTime.now().toIso8601String(),
     });
+    // Trigger sync in background
+    SupabaseSyncService().syncUnsyncedData().catchError((e) => print('Sync error: $e'));
   }
 
   Future<List<Map<String, dynamic>>> getAllCashMovements({String? startDate, String? endDate}) async {
@@ -1257,7 +1352,9 @@ class DatabaseHelper {
     final db = await instance.database;
     user['password_hash'] = hashPassword(user['password_hash']);
     user['created_at'] = DateTime.now().toIso8601String();
-    return await db.insert('users', user);
+    final id = await db.insert('users', user);
+    SupabaseSyncService().syncUnsyncedData().catchError((e) => print('Sync error: $e'));
+    return id;
   }
 
   Future<int> updateUser(int id, Map<String, dynamic> user) async {
@@ -1265,12 +1362,17 @@ class DatabaseHelper {
     if (user.containsKey('password_hash')) {
       user['password_hash'] = hashPassword(user['password_hash']);
     }
-    return await db.update('users', user, where: 'id = ?', whereArgs: [id]);
+    user['synced'] = 0;
+    final result = await db.update('users', user, where: 'id = ?', whereArgs: [id]);
+    SupabaseSyncService().syncUnsyncedData().catchError((e) => print('Sync error: $e'));
+    return result;
   }
 
   Future<int> toggleUserActive(int id, bool isActive) async {
     final db = await instance.database;
-    return await db.update('users', {'is_active': isActive ? 1 : 0}, where: 'id = ?', whereArgs: [id]);
+    final result = await db.update('users', {'is_active': isActive ? 1 : 0, 'synced': 0}, where: 'id = ?', whereArgs: [id]);
+    SupabaseSyncService().syncUnsyncedData().catchError((e) => print('Sync error: $e'));
+    return result;
   }
 
   // --- Product Update ---
@@ -1724,4 +1826,48 @@ class DatabaseHelper {
       'expected_cash': expectedCash,
     };
   }
+
+  // --- Sync Methods ---
+  Future<List<Map<String, dynamic>>> getUnsyncedTransactions() async {
+    final db = await instance.database;
+    // Get transactions and their items for sync
+    final txns = await db.query('transactions', where: 'synced = 0');
+    List<Map<String, dynamic>> result = [];
+    for (var txn in txns) {
+      final items = await db.query('transaction_items', where: 'transaction_id = ?', whereArgs: [txn['id']]);
+      Map<String, dynamic> txnMap = Map<String, dynamic>.from(txn);
+      txnMap['items'] = items;
+      result.add(txnMap);
+    }
+    return result;
+  }
+
+  Future<void> markTransactionsAsSynced(List<int> ids) async {
+    if (ids.isEmpty) return;
+    final db = await instance.database;
+    await db.update('transactions', {'synced': 1}, where: 'id IN (${ids.map((_) => '?').join(',')})', whereArgs: ids);
+  }
+
+  Future<List<Map<String, dynamic>>> getUnsyncedCashMovements() async {
+    final db = await instance.database;
+    return await db.query('cash_movements', where: 'synced = 0');
+  }
+
+  Future<void> markCashMovementsAsSynced(List<int> ids) async {
+    if (ids.isEmpty) return;
+    final db = await instance.database;
+    await db.update('cash_movements', {'synced': 1}, where: 'id IN (${ids.map((_) => '?').join(',')})', whereArgs: ids);
+  }
+
+  Future<List<Map<String, dynamic>>> getUnsyncedUsers() async {
+    final db = await instance.database;
+    return await db.query('users', where: 'synced = 0');
+  }
+
+  Future<void> markUsersAsSynced(List<int> ids) async {
+    if (ids.isEmpty) return;
+    final db = await instance.database;
+    await db.update('users', {'synced': 1}, where: 'id IN (${ids.map((_) => '?').join(',')})', whereArgs: ids);
+  }
 }
+
