@@ -89,6 +89,40 @@ class DatabaseHelper {
       options: OpenDatabaseOptions(
         version: 9,
         onCreate: _createDB,
+        onOpen: (db) async {
+          // Ensure roles_permissions is seeded even for databases
+          // that were created at version 9 without the seeding step.
+          final existing = await db.query('roles_permissions');
+          if (existing.isEmpty) {
+            final modules = ['dashboard', 'pos', 'products', 'inventory', 'transactions', 'shift', 'settings', 'reports', 'users'];
+            for (var m in modules) {
+              await db.insert('roles_permissions', {
+                'role': 'Admin', 'module': m,
+                'can_view': 1, 'can_create': 1, 'can_edit': 1, 'can_delete': 1
+              });
+            }
+            for (var m in modules) {
+              final isRestricted = ['settings', 'reports', 'users'].contains(m);
+              await db.insert('roles_permissions', {
+                'role': 'Kasir', 'module': m,
+                'can_view': isRestricted ? 0 : 1,
+                'can_create': (m == 'pos' || m == 'shift') ? 1 : 0,
+                'can_edit': 0, 'can_delete': 0
+              });
+            }
+          }
+          // Ensure default settings exist
+          final settingsResult = await db.rawQuery('SELECT COUNT(*) as cnt FROM settings');
+          final settingsCount = settingsResult.first['cnt'] as int? ?? 0;
+          if (settingsCount == 0) {
+            final batch = db.batch();
+            batch.insert('settings', {'key': 'store_name', 'value': 'DashDock Store'});
+            batch.insert('settings', {'key': 'store_address', 'value': 'Jl. Contoh No. 123'});
+            batch.insert('settings', {'key': 'store_phone', 'value': '08123456789'});
+            batch.insert('settings', {'key': 'tax_percentage', 'value': '11'});
+            await batch.commit();
+          }
+        },
         onUpgrade: (db, oldVersion, newVersion) async {
           if (oldVersion < 2) {
             await db.execute('''
@@ -628,6 +662,32 @@ class DatabaseHelper {
   }
 
   Future _insertDummyData(Database db) async {
+    // Seed default role permissions
+    final modules = ['dashboard', 'pos', 'products', 'inventory', 'transactions', 'shift', 'settings', 'reports', 'users'];
+    for (var m in modules) {
+      await db.insert('roles_permissions', {
+        'role': 'Admin', 'module': m,
+        'can_view': 1, 'can_create': 1, 'can_edit': 1, 'can_delete': 1
+      });
+    }
+    for (var m in modules) {
+      final isRestricted = ['settings', 'reports', 'users'].contains(m);
+      await db.insert('roles_permissions', {
+        'role': 'Kasir', 'module': m,
+        'can_view': isRestricted ? 0 : 1,
+        'can_create': (m == 'pos' || m == 'shift') ? 1 : 0,
+        'can_edit': 0, 'can_delete': 0
+      });
+    }
+
+    // Default settings
+    final batch = db.batch();
+    batch.insert('settings', {'key': 'store_name', 'value': 'DashDock Store'});
+    batch.insert('settings', {'key': 'store_address', 'value': 'Jl. Contoh No. 123'});
+    batch.insert('settings', {'key': 'store_phone', 'value': '08123456789'});
+    batch.insert('settings', {'key': 'tax_percentage', 'value': '11'});
+    await batch.commit();
+
     await db.insert('categories', {'name': 'Food', 'description': 'Semua makanan'});
     await db.insert('categories', {'name': 'Beverages', 'description': 'Semua minuman'});
     await db.insert('categories', {'name': 'Electronics', 'description': 'Alat elektronik'});

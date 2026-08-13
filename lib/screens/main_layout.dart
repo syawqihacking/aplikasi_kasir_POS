@@ -37,7 +37,8 @@ class _MainLayoutState extends State<MainLayout> {
   void initState() {
     super.initState();
     final auth = AuthService();
-    final isKasir = auth.role?.toLowerCase() == 'kasir' || auth.role?.toLowerCase() == 'cashier';
+    final userRole = (auth.role ?? '').toLowerCase();
+    final isKasir = userRole == 'kasir' || userRole == 'cashier' || userRole == 'kasir utama' || userRole == 'cashier utama';
     if (isKasir && mainLayoutTabNotifier.value == 0) {
       _selectedIndex = 1;
       mainLayoutTabNotifier.value = 1;

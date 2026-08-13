@@ -19,7 +19,8 @@ class Sidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = AuthService();
-    final isKasir = auth.role?.toLowerCase() == 'kasir' || auth.role?.toLowerCase() == 'cashier';
+    final userRole = (auth.role ?? '').toLowerCase();
+    final isKasir = userRole == 'kasir' || userRole == 'cashier' || userRole == 'kasir utama' || userRole == 'cashier utama';
     return Container(
       width: 250,
       color: AppColors.sidebar,
