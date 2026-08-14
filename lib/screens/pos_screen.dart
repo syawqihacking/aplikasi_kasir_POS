@@ -1110,7 +1110,7 @@ class _PosScreenState extends State<PosScreen> {
     
     pdf.addPage(
       pw.Page(
-        pageFormat: const PdfPageFormat(58 * PdfPageFormat.mm, double.infinity, marginAll: 2 * PdfPageFormat.mm),
+        pageFormat: PdfPageFormat.roll57,
         build: (pw.Context context) {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -1219,7 +1219,7 @@ class _PosScreenState extends State<PosScreen> {
       final defaultPrinterName = settings['default_printer'];
       
       final pdfBytes = await _generateReceiptPdf(
-        const PdfPageFormat(58 * PdfPageFormat.mm, double.infinity, marginAll: 2 * PdfPageFormat.mm),
+        PdfPageFormat.roll57,
         subtotal: subtotal,
         discount: discount,
         tax: tax,
