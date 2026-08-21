@@ -57,7 +57,7 @@ class _OpenShiftCardState extends State<OpenShiftCard> {
     symbol: 'Rp ',
     decimalDigits: 0,
   );
-  final _dateFormat = DateFormat('EEEE, dd MMMM yyyy • HH:mm:ss', 'id_ID');
+  final _dateFormat = DateFormat('EEEE, dd MMMM yyyy • HH:mm:ss');
 
   @override
   void initState() {

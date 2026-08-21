@@ -322,10 +322,12 @@ class _ShiftScreenState extends State<ShiftScreen> with SingleTickerProviderStat
           builder: (context, activeShift, _) {
             if (activeShift == null) {
               return Center(
+                key: const ValueKey('open_shift_container'),
                 child: SingleChildScrollView(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 580),
                     child: OpenShiftCard(
+                      key: const ValueKey('open_shift_card'),
                       onShiftOpened: () {
                         ShiftService.instance.refreshActiveShift();
                         _loadHistory();
@@ -337,6 +339,7 @@ class _ShiftScreenState extends State<ShiftScreen> with SingleTickerProviderStat
             }
 
             return ActiveShiftView(
+              key: ValueKey('active_shift_${activeShift.id}'),
               shift: activeShift,
               onRefresh: () {
                 ShiftService.instance.refreshActiveShift();

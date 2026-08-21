@@ -15,12 +15,27 @@ class CloseShiftDialog extends StatefulWidget {
     required this.shift,
   });
 
-  static Future<bool?> show(BuildContext context, {required CashShift shift}) {
-    return showDialog<bool>(
+  static Future<bool?> show(BuildContext context, {required CashShift shift}) async {
+    final result = await showDialog<Map<String, dynamic>?>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => CloseShiftDialog(shift: shift),
+      builder: (dialogContext) => CloseShiftDialog(shift: shift),
     );
+
+    if (result != null && result.isNotEmpty && context.mounted) {
+      final closedShift = CashShift.fromMap(result);
+      final movements = (result['movements'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      final transactions = (result['transactions'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+
+      await ShiftReceiptDialog.show(
+        context,
+        shift: closedShift,
+        movements: movements,
+        transactions: transactions,
+      );
+      return true;
+    }
+    return result != null;
   }
 
   @override
@@ -47,9 +62,9 @@ class _CloseShiftDialogState extends State<CloseShiftDialog> {
   @override
   void initState() {
     super.initState();
-    // Default actual cash to system cash for convenience
-    _actualCash = widget.shift.expectedCash;
-    _physicalCashController.text = _actualCash > 0 ? _actualCash.toStringAsFixed(0) : '';
+    // Default actual cash to system cash
+    _actualCash = _systemCash;
+    _physicalCashController.text = _systemCash.toStringAsFixed(0);
   }
 
   @override
@@ -68,12 +83,12 @@ class _CloseShiftDialogState extends State<CloseShiftDialog> {
       final confirm = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Row(
             children: [
               Icon(
-                isDeficit ? Icons.warning_amber_rounded : Icons.info_outline,
-                color: isDeficit ? AppColors.danger : AppColors.primary,
+                diff < 0 ? Icons.warning_amber_rounded : Icons.info_outline,
+                color: diff < 0 ? AppColors.danger : Colors.blue,
               ),
               const SizedBox(width: 10),
               Text(
@@ -118,28 +133,16 @@ class _CloseShiftDialogState extends State<CloseShiftDialog> {
         closedBy: userId,
       );
 
+      final details = await ShiftService.instance.getShiftDetails(widget.shift.id ?? 1);
+
       if (mounted) {
-        Navigator.pop(context, true);
+        Navigator.pop(context, details ?? <String, dynamic>{});
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Shift ${widget.shift.shiftNumber} berhasil ditutup!'),
             backgroundColor: AppColors.success,
           ),
         );
-
-        // Fetch closed shift details and show receipt dialog
-        final details = await ShiftService.instance.getShiftDetails(widget.shift.id ?? 1);
-        if (details != null && mounted) {
-          final closedShift = CashShift.fromMap(details);
-          final movements = (details['movements'] as List?)?.cast<Map<String, dynamic>>() ?? [];
-          final transactions = (details['transactions'] as List?)?.cast<Map<String, dynamic>>() ?? [];
-          ShiftReceiptDialog.show(
-            context,
-            shift: closedShift,
-            movements: movements,
-            transactions: transactions,
-          );
-        }
       }
     } catch (e) {
       if (mounted) {
