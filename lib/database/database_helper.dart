@@ -194,6 +194,16 @@ class DatabaseHelper {
             batch.insert('settings', {'key': 'tax_percentage', 'value': '11'});
             await batch.commit();
           }
+          // Ensure cash_shifts and transactions have modern columns
+          try {
+            await db.execute('ALTER TABLE cash_shifts ADD COLUMN shift_number TEXT');
+          } catch (_) {}
+          try {
+            await db.execute('ALTER TABLE cash_shifts ADD COLUMN closing_note TEXT');
+          } catch (_) {}
+          try {
+            await db.execute('ALTER TABLE transactions ADD COLUMN shift_id INTEGER DEFAULT 0');
+          } catch (_) {}
         },
         onUpgrade: (db, oldVersion, newVersion) async {
           if (oldVersion < 2) {
@@ -565,11 +575,13 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE cash_shifts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        shift_number TEXT,
         cashier_id INTEGER,
         opening_balance REAL DEFAULT 0,
         closing_balance_system REAL DEFAULT 0,
         closing_balance_physical REAL DEFAULT 0,
         difference REAL DEFAULT 0,
+        closing_note TEXT,
         opened_at TEXT,
         closed_at TEXT,
         status TEXT DEFAULT 'OPEN'
@@ -630,6 +642,7 @@ class DatabaseHelper {
         change_amount REAL,
         payment_method TEXT,
         cashier_id INTEGER,
+        shift_id INTEGER DEFAULT 0,
         created_at TEXT,
         synced INTEGER DEFAULT 0
       )
@@ -914,63 +927,281 @@ class DatabaseHelper {
   }
 
   // --- Shift Management ---
+  Future<String> generateNextShiftNumber() async {
+    final db = await instance.database;
+    final now = DateTime.now();
+    final datePrefix = 'SHF-${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}';
+    final result = await db.rawQuery(
+      "SELECT COUNT(*) as count FROM cash_shifts WHERE shift_number LIKE '$datePrefix%'"
+    );
+    final count = (result.first['count'] as int? ?? 0) + 1;
+    return '$datePrefix-${count.toString().padLeft(3, '0')}';
+  }
+
   Future<Map<String, dynamic>?> getActiveShift() async {
     final db = await instance.database;
-    final results = await db.query(
-      'cash_shifts',
-      where: 'status = ?',
-      whereArgs: ['OPEN'],
-      orderBy: 'opened_at DESC',
-      limit: 1,
-    );
+    final results = await db.rawQuery('''
+      SELECT cs.*, u.full_name as cashier_name, u.username as cashier_username
+      FROM cash_shifts cs
+      LEFT JOIN users u ON cs.cashier_id = u.id
+      WHERE cs.status = 'OPEN'
+      ORDER BY cs.opened_at DESC
+      LIMIT 1
+    ''');
     if (results.isNotEmpty) return results.first;
     return null;
   }
 
-  Future<void> openShift(double openingBalance) async {
+  Future<Map<String, dynamic>> openShift({
+    required int cashierId,
+    required double openingBalance,
+  }) async {
     final db = await instance.database;
-    await db.insert('cash_shifts', {
-      'cashier_id': 1, // Default user
+    final existing = await getActiveShift();
+    if (existing != null) {
+      throw Exception('Masih ada shift yang aktif (${existing['shift_number'] ?? '#${existing['id']}'}). Tutup shift terlebih dahulu.');
+    }
+    final shiftNumber = await generateNextShiftNumber();
+    final nowStr = DateTime.now().toIso8601String();
+    
+    final id = await db.insert('cash_shifts', {
+      'shift_number': shiftNumber,
+      'cashier_id': cashierId,
       'opening_balance': openingBalance,
-      'opened_at': DateTime.now().toIso8601String(),
+      'closing_balance_system': 0.0,
+      'closing_balance_physical': 0.0,
+      'difference': 0.0,
+      'opened_at': nowStr,
       'status': 'OPEN',
     });
+
+    await logActivity('OPEN_SHIFT', 'shift', 'Buka shift $shiftNumber dengan modal awal Rp ${openingBalance.toStringAsFixed(0)}', userId: cashierId);
+
+    return {
+      'id': id,
+      'shift_number': shiftNumber,
+      'cashier_id': cashierId,
+      'opening_balance': openingBalance,
+      'opened_at': nowStr,
+      'status': 'OPEN',
+    };
   }
 
-  Future<void> closeShift(double physicalBalance) async {
+  Future<Map<String, dynamic>?> getActiveShiftSummary({int? shiftId}) async {
     final db = await instance.database;
-    final activeShift = await getActiveShift();
-    if (activeShift == null) return;
+    Map<String, dynamic>? shift;
     
-    final shiftId = activeShift['id'];
-    
-    // Calculate system balance
-    // System Balance = Opening + Total Cash Sales
-    final salesResult = await db.rawQuery('''
-      SELECT SUM(paid_amount - change_amount) as total_cash
-      FROM transactions
-      WHERE payment_method = 'Cash' AND created_at >= ?
-    ''', [activeShift['opened_at']]);
-    
-    final totalCashSales = salesResult.first['total_cash'] ?? 0.0;
-    
-    final inResult = await db.rawQuery("SELECT SUM(amount) as total FROM cash_movements WHERE shift_id = ? AND type = 'IN'", [shiftId]);
-    final outResult = await db.rawQuery("SELECT SUM(amount) as total FROM cash_movements WHERE shift_id = ? AND type = 'OUT'", [shiftId]);
-    final totalIn = inResult.first['total'] ?? 0.0;
-    final totalOut = outResult.first['total'] ?? 0.0;
-    
-    final double openingBalance = (activeShift['opening_balance'] as num).toDouble();
-    final systemBalance = openingBalance + (totalCashSales as num).toDouble() + (totalIn as num).toDouble() - (totalOut as num).toDouble();
-    
-    final difference = physicalBalance - systemBalance;
-    
+    if (shiftId != null) {
+      final res = await db.rawQuery('''
+        SELECT cs.*, u.full_name as cashier_name, u.username as cashier_username
+        FROM cash_shifts cs
+        LEFT JOIN users u ON cs.cashier_id = u.id
+        WHERE cs.id = ?
+      ''', [shiftId]);
+      if (res.isNotEmpty) shift = res.first;
+    } else {
+      shift = await getActiveShift();
+    }
+
+    if (shift == null) return null;
+    final int sid = shift['id'] as int;
+    final String openedAt = shift['opened_at'] as String;
+    final String? closedAt = shift['closed_at'] as String?;
+
+    // 1. Get transactions metrics
+    final txQuery = closedAt != null
+        ? "SELECT * FROM transactions WHERE (shift_id = ? OR (shift_id = 0 AND created_at >= ? AND created_at <= ?))"
+        : "SELECT * FROM transactions WHERE (shift_id = ? OR (shift_id = 0 AND created_at >= ?))";
+    final txArgs = closedAt != null ? [sid, openedAt, closedAt] : [sid, openedAt];
+    final txList = await db.rawQuery(txQuery, txArgs);
+
+    double totalCashSales = 0.0;
+    double totalNonCashSales = 0.0;
+    double totalSales = 0.0;
+    int transactionCount = txList.length;
+
+    for (var tx in txList) {
+      final grandTotal = (tx['grand_total'] as num?)?.toDouble() ?? 0.0;
+      final paidAmount = (tx['paid_amount'] as num?)?.toDouble() ?? grandTotal;
+      final changeAmount = (tx['change_amount'] as num?)?.toDouble() ?? 0.0;
+      final method = (tx['payment_method'] as String?) ?? 'Cash';
+
+      totalSales += grandTotal;
+
+      if (method.toLowerCase() == 'cash') {
+        final netCash = (paidAmount - changeAmount).clamp(0.0, double.infinity);
+        totalCashSales += netCash > 0 ? netCash : grandTotal;
+      } else if (method.toLowerCase().startsWith('split')) {
+        final match = RegExp(r'cash:\s*([0-9\.]+)', caseSensitive: false).firstMatch(method);
+        if (match != null) {
+          final splitCash = double.tryParse(match.group(1)!) ?? 0.0;
+          totalCashSales += splitCash;
+          totalNonCashSales += (grandTotal - splitCash).clamp(0.0, double.infinity);
+        } else {
+          totalCashSales += (grandTotal / 2);
+          totalNonCashSales += (grandTotal / 2);
+        }
+      } else {
+        totalNonCashSales += grandTotal;
+      }
+    }
+
+    // 2. Get Cash Movements
+    final inResult = await db.rawQuery("SELECT SUM(amount) as total FROM cash_movements WHERE shift_id = ? AND type = 'IN'", [sid]);
+    final outResult = await db.rawQuery("SELECT SUM(amount) as total FROM cash_movements WHERE shift_id = ? AND type = 'OUT'", [sid]);
+    final movementsIn = (inResult.first['total'] as num?)?.toDouble() ?? 0.0;
+    final movementsOut = (outResult.first['total'] as num?)?.toDouble() ?? 0.0;
+
+    final double openingBalance = (shift['opening_balance'] as num?)?.toDouble() ?? 0.0;
+    final expectedCash = openingBalance + totalCashSales + movementsIn - movementsOut;
+
+    return {
+      ...shift,
+      'cashier_name': shift['cashier_name'] ?? shift['cashier_username'] ?? 'Kasir',
+      'total_cash_sales': totalCashSales,
+      'total_non_cash_sales': totalNonCashSales,
+      'total_sales': totalSales,
+      'sales_total': totalSales,
+      'transaction_count': transactionCount,
+      'movements_in': movementsIn,
+      'movements_out': movementsOut,
+      'total_cash_in': movementsIn,
+      'total_cash_out': movementsOut,
+      'expected_cash': expectedCash,
+    };
+  }
+
+  Future<void> closeShift({
+    required int shiftId,
+    required double physicalBalance,
+    String? note,
+    int? closedBy,
+  }) async {
+    final db = await instance.database;
+    final summary = await getActiveShiftSummary(shiftId: shiftId);
+    if (summary == null) throw Exception('Shift #$shiftId tidak ditemukan');
+
+    final double expectedCash = (summary['expected_cash'] as num?)?.toDouble() ?? 0.0;
+    final double difference = physicalBalance - expectedCash;
+    final nowStr = DateTime.now().toIso8601String();
+    final cashierId = closedBy ?? (summary['cashier_id'] as int? ?? 1);
+
     await db.update('cash_shifts', {
-      'closing_balance_system': systemBalance,
+      'closing_balance_system': expectedCash,
       'closing_balance_physical': physicalBalance,
       'difference': difference,
-      'closed_at': DateTime.now().toIso8601String(),
-      'status': 'CLOSED'
+      'closing_note': note,
+      'closed_at': nowStr,
+      'status': 'CLOSED',
     }, where: 'id = ?', whereArgs: [shiftId]);
+
+    final shiftNumber = summary['shift_number'] ?? '#$shiftId';
+    await logActivity('CLOSE_SHIFT', 'shift', 'Tutup shift $shiftNumber. Kas Sistem: $expectedCash, Kas Fisik: $physicalBalance, Selisih: $difference', userId: cashierId);
+  }
+
+  Future<List<Map<String, dynamic>>> getShiftHistory({
+    String? startDate,
+    String? endDate,
+    int? cashierId,
+    String? status,
+    String? searchQuery,
+    int limit = 100,
+  }) async {
+    final db = await instance.database;
+    String whereClause = '1=1';
+    List<dynamic> whereArgs = [];
+
+    if (startDate != null && startDate.isNotEmpty) {
+      whereClause += ' AND cs.opened_at >= ?';
+      whereArgs.add(startDate);
+    }
+    if (endDate != null && endDate.isNotEmpty) {
+      whereClause += ' AND cs.opened_at <= ?';
+      whereArgs.add(endDate);
+    }
+    if (cashierId != null && cashierId > 0) {
+      whereClause += ' AND cs.cashier_id = ?';
+      whereArgs.add(cashierId);
+    }
+    if (status != null && status.isNotEmpty && status != 'ALL') {
+      whereClause += ' AND cs.status = ?';
+      whereArgs.add(status);
+    }
+    if (searchQuery != null && searchQuery.trim().isNotEmpty) {
+      whereClause += ' AND (cs.shift_number LIKE ? OR u.full_name LIKE ? OR u.username LIKE ?)';
+      final q = '%${searchQuery.trim()}%';
+      whereArgs.addAll([q, q, q]);
+    }
+
+    final query = '''
+      SELECT cs.*, COALESCE(u.full_name, u.username, 'Kasir') as cashier_name
+      FROM cash_shifts cs
+      LEFT JOIN users u ON cs.cashier_id = u.id
+      WHERE $whereClause
+      ORDER BY cs.opened_at DESC
+      LIMIT $limit
+    ''';
+
+    final shifts = await db.rawQuery(query, whereArgs);
+    List<Map<String, dynamic>> results = [];
+    for (var s in shifts) {
+      final summary = await getActiveShiftSummary(shiftId: s['id'] as int);
+      results.add(summary ?? Map<String, dynamic>.from(s));
+    }
+    return results;
+  }
+
+  Future<Map<String, dynamic>?> getShiftDetails(int shiftId) async {
+    final summary = await getActiveShiftSummary(shiftId: shiftId);
+    if (summary == null) return null;
+    final movements = await getShiftMovements(shiftId);
+    final transactions = await getShiftTransactions(shiftId, openedAt: summary['opened_at'], closedAt: summary['closed_at']);
+    return {
+      ...summary,
+      'movements': movements,
+      'transactions': transactions,
+    };
+  }
+
+  Future<List<Map<String, dynamic>>> getShiftMovements(int shiftId) async {
+    final db = await instance.database;
+    return await db.rawQuery('''
+      SELECT cm.*, COALESCE(u.full_name, u.username, 'User') as created_by_name
+      FROM cash_movements cm
+      LEFT JOIN users u ON cm.created_by = u.id
+      WHERE cm.shift_id = ?
+      ORDER BY cm.created_at DESC
+    ''', [shiftId]);
+  }
+
+  Future<List<Map<String, dynamic>>> getShiftTransactions(int shiftId, {String? openedAt, String? closedAt}) async {
+    final db = await instance.database;
+    if (openedAt != null) {
+      if (closedAt != null) {
+        return await db.rawQuery('''
+          SELECT t.*, COALESCE(u.full_name, u.username, 'Kasir') as cashier_name
+          FROM transactions t
+          LEFT JOIN users u ON t.cashier_id = u.id
+          WHERE t.shift_id = ? OR (t.shift_id = 0 AND t.created_at >= ? AND t.created_at <= ?)
+          ORDER BY t.created_at DESC
+        ''', [shiftId, openedAt, closedAt]);
+      } else {
+        return await db.rawQuery('''
+          SELECT t.*, COALESCE(u.full_name, u.username, 'Kasir') as cashier_name
+          FROM transactions t
+          LEFT JOIN users u ON t.cashier_id = u.id
+          WHERE t.shift_id = ? OR (t.shift_id = 0 AND t.created_at >= ?)
+          ORDER BY t.created_at DESC
+        ''', [shiftId, openedAt]);
+      }
+    }
+    return await db.rawQuery('''
+      SELECT t.*, COALESCE(u.full_name, u.username, 'Kasir') as cashier_name
+      FROM transactions t
+      LEFT JOIN users u ON t.cashier_id = u.id
+      WHERE t.shift_id = ?
+      ORDER BY t.created_at DESC
+    ''', [shiftId]);
   }
 
   // --- Settings ---
@@ -1013,8 +1244,23 @@ class DatabaseHelper {
     required double changeAmount,
     required String paymentMethod,
     required List<Map<String, dynamic>> cartItems,
+    int? cashierId,
+    int? shiftId,
   }) async {
     final db = await instance.database;
+
+    int resolvedCashierId = cashierId ?? 1;
+    int resolvedShiftId = shiftId ?? 0;
+
+    if (resolvedShiftId == 0) {
+      final active = await getActiveShift();
+      if (active != null) {
+        resolvedShiftId = (active['id'] as num).toInt();
+        if (cashierId == null && active['cashier_id'] != null) {
+          resolvedCashierId = (active['cashier_id'] as num).toInt();
+        }
+      }
+    }
     
     // Start a transaction block to ensure atomic operations
     await db.transaction((txn) async {
@@ -1028,7 +1274,8 @@ class DatabaseHelper {
         'paid_amount': paidAmount,
         'change_amount': changeAmount,
         'payment_method': paymentMethod,
-        'cashier_id': 1, // Default user
+        'cashier_id': resolvedCashierId,
+        'shift_id': resolvedShiftId,
         'created_at': DateTime.now().toIso8601String(),
       });
 
@@ -1237,16 +1484,21 @@ class DatabaseHelper {
   }
 
   // --- Cash Movements ---
-  Future<void> addCashMovement(int shiftId, String type, double amount, String reason) async {
+  Future<int> addCashMovement(int shiftId, String type, double amount, String reason, {int userId = 1}) async {
     final db = await instance.database;
-    await db.insert('cash_movements', {
+    final id = await db.insert('cash_movements', {
       'shift_id': shiftId,
       'type': type,
       'amount': amount,
       'reason': reason,
-      'created_by': 1,
+      'created_by': userId,
       'created_at': DateTime.now().toIso8601String(),
     });
+    final typeLabel = type.toUpperCase() == 'IN' ? 'Cash In (Pemasukan)' : 'Cash Out (Pengeluaran)';
+    await logActivity('CASH_MOVEMENT', 'shift', '$typeLabel Rp ${amount.toStringAsFixed(0)} - $reason', userId: userId);
+    // Trigger sync in background
+    SupabaseSyncService().syncUnsyncedData().catchError((e) => print('Sync error: $e'));
+    return id;
   }
 
   Future<List<Map<String, dynamic>>> getCashMovements(int shiftId) async {
@@ -1790,41 +2042,6 @@ class DatabaseHelper {
       );
     }
     return await db.query('transactions', orderBy: 'created_at DESC', limit: limit);
-  }
-
-  Future<Map<String, dynamic>?> getActiveShiftSummary() async {
-    final db = await instance.database;
-    final shiftResult = await db.query('cash_shifts', where: "status = 'OPEN'", orderBy: 'opened_at DESC', limit: 1);
-    if (shiftResult.isEmpty) return null;
-    
-    final shift = shiftResult.first;
-    final shiftId = shift['id'];
-    
-    // Get cashier name
-    final userResult = await db.query('users', where: 'id = ?', whereArgs: [shift['cashier_id']]);
-    final cashierName = userResult.isNotEmpty ? userResult.first['full_name'] : 'Unknown';
-    
-    // Get sales total since shift opened
-    final salesResult = await db.rawQuery("SELECT SUM(grand_total) as total FROM transactions WHERE created_at >= ?", [shift['opened_at']]);
-    final salesTotal = salesResult.first['total'] ?? 0.0;
-    
-    // Get cash movements
-    final movementsResult = await db.rawQuery("SELECT SUM(amount) as total FROM cash_movements WHERE shift_id = ? AND type = 'IN'", [shiftId]);
-    final movementsIn = movementsResult.first['total'] ?? 0.0;
-    
-    final movementsOutResult = await db.rawQuery("SELECT SUM(amount) as total FROM cash_movements WHERE shift_id = ? AND type = 'OUT'", [shiftId]);
-    final movementsOut = movementsOutResult.first['total'] ?? 0.0;
-    
-    final expectedCash = (shift['opening_balance'] as num) + (salesTotal as num) + (movementsIn as num) - (movementsOut as num);
-    
-    return {
-      ...shift,
-      'cashier_name': cashierName,
-      'sales_total': salesTotal,
-      'movements_in': movementsIn,
-      'movements_out': movementsOut,
-      'expected_cash': expectedCash,
-    };
   }
 
   // --- Sync Methods ---

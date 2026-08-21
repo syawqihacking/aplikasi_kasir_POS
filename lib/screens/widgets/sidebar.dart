@@ -6,6 +6,9 @@ import '../../services/auth_service.dart';
 import '../login_screen.dart';
 import '../../main.dart';
 
+import '../../services/shift_service.dart';
+import '../../models/shift.dart';
+
 class Sidebar extends StatelessWidget {
   final int selectedIndex;
   final Function(int) onMenuTap;
@@ -70,6 +73,32 @@ class Sidebar extends StatelessWidget {
                   _buildMenuSection('MENU'),
                   if (!isKasir && auth.hasPermission('dashboard', 'view')) _buildMenuItem(Icons.dashboard_outlined, 'Dashboard', 0),
                   if (auth.hasPermission('pos', 'view')) _buildMenuItem(Icons.point_of_sale_outlined, 'POS / Kasir', 1),
+                  _buildMenuItem(
+                    Icons.schedule_outlined,
+                    'Shift Kasir',
+                    13,
+                    trailing: ValueListenableBuilder<CashShift?>(
+                      valueListenable: ShiftService.instance.activeShiftNotifier,
+                      builder: (context, shift, _) {
+                        if (shift == null) return const SizedBox.shrink();
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.success,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            'AKTIF',
+                            style: GoogleFonts.outfit(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                   if (!isKasir && auth.hasPermission('products', 'view')) _buildMenuItem(Icons.shopping_cart_outlined, 'Products', 2),
                   if (!isKasir && auth.hasPermission('inventory', 'view')) _buildMenuItem(Icons.inventory_outlined, 'Inventory (Restock)', 3),
                   if (!isKasir) ...[
@@ -115,7 +144,7 @@ class Sidebar extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuItem(IconData icon, String title, int index) {
+  Widget _buildMenuItem(IconData icon, String title, int index, {Widget? trailing}) {
     final isActive = selectedIndex == index;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
@@ -138,6 +167,7 @@ class Sidebar extends StatelessWidget {
               color: isActive ? Colors.white : AppColors.textDark,
             ),
           ),
+          trailing: trailing,
           onTap: () => onMenuTap(index),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),

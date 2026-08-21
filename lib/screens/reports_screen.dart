@@ -907,16 +907,19 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
         ],
         rows: _shiftData.map((d) {
           final isClosed = d['status'] == 'CLOSED';
-          final diff = (d['difference'] as num).toDouble();
+          final diff = (d['difference'] as num?)?.toDouble() ?? 0.0;
+          final opening = (d['opening_balance'] as num?)?.toDouble() ?? 0.0;
+          final closingSys = (d['closing_balance_system'] as num?)?.toDouble() ?? 0.0;
+          final closingPhys = (d['closing_balance_physical'] as num?)?.toDouble() ?? 0.0;
           return DataRow(cells: [
             DataCell(Text(d['cashier'] ?? 'Unknown')),
-            DataCell(Text(d['opened_at'].toString().substring(0, 19))),
-            DataCell(Text(d['closed_at'] != null ? d['closed_at'].toString().substring(0, 19) : '-')),
-            DataCell(Text(_currencyFormat.format(d['opening_balance']))),
-            DataCell(Text(_currencyFormat.format(d['closing_balance_system']))),
-            DataCell(Text(_currencyFormat.format(d['closing_balance_physical']))),
+            DataCell(Text(d['opened_at'] != null ? d['opened_at'].toString().substring(0, 19).replaceAll('T', ' ') : '-')),
+            DataCell(Text(d['closed_at'] != null ? d['closed_at'].toString().substring(0, 19).replaceAll('T', ' ') : '-')),
+            DataCell(Text(_currencyFormat.format(opening))),
+            DataCell(Text(_currencyFormat.format(closingSys))),
+            DataCell(Text(_currencyFormat.format(closingPhys))),
             DataCell(Text(_currencyFormat.format(diff), style: TextStyle(color: diff < 0 ? AppColors.danger : (diff > 0 ? AppColors.success : Colors.black), fontWeight: FontWeight.bold))),
-            DataCell(Text(d['status'], style: TextStyle(color: isClosed ? AppColors.primary : AppColors.success, fontWeight: FontWeight.bold))),
+            DataCell(Text(d['status'] ?? 'OPEN', style: TextStyle(color: isClosed ? AppColors.primary : AppColors.success, fontWeight: FontWeight.bold))),
           ]);
         }).toList(),
       ),

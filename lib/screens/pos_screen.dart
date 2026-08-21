@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -9,6 +10,14 @@ import '../theme/app_colors.dart';
 import '../database/database_helper.dart';
 import '../services/scanner_service.dart';
 import '../services/cart_service.dart';
+import '../services/auth_service.dart';
+import '../services/shift_service.dart';
+import '../models/shift.dart';
+import 'shift/widgets/open_shift_card.dart';
+import 'shift/dialogs/cash_movement_dialog.dart';
+import 'shift/dialogs/close_shift_dialog.dart';
+import 'shift/dialogs/shift_detail_dialog.dart';
+import '../main.dart';
 import 'widgets/add_product_dialog.dart';
 
 class PosScreen extends StatefulWidget {
@@ -47,15 +56,24 @@ class _PosScreenState extends State<PosScreen> {
 
     // Listen for cart changes to trigger re-render
     _cart.notifier.addListener(_onCartChanged);
+    ShiftService.instance.activeShiftNotifier.addListener(_onActiveShiftChanged);
   }
 
   void _onCartChanged() {
     if (mounted) setState(() {});
   }
 
+  void _onActiveShiftChanged() {
+    if (mounted) {
+      setState(() {
+        _isShiftOpened = ShiftService.instance.hasActiveShift;
+      });
+    }
+  }
+
   Future<void> _loadSettings() async {
     final settings = await DatabaseHelper.instance.getSettings();
-    await DatabaseHelper.instance.getActiveShift();
+    final activeShift = await ShiftService.instance.refreshActiveShift();
     
     // Load draft
     if (_cart.items.isEmpty) {
@@ -64,7 +82,7 @@ class _PosScreenState extends State<PosScreen> {
     
     if (mounted) {
       setState(() {
-        _isShiftOpened = true; // Bypassed shift management check
+        _isShiftOpened = activeShift != null;
         _isLoadingShift = false;
         
         if (settings.containsKey('tax_percentage')) {
@@ -87,6 +105,7 @@ class _PosScreenState extends State<PosScreen> {
   void dispose() {
     ScannerService.instance.popContext('pos_screen');
     _cart.notifier.removeListener(_onCartChanged);
+    ShiftService.instance.activeShiftNotifier.removeListener(_onActiveShiftChanged);
     _searchFocusNode.dispose();
     super.dispose();
   }
@@ -182,15 +201,89 @@ class _PosScreenState extends State<PosScreen> {
     }
     if (!_isShiftOpened) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.lock_clock, size: 80, color: AppColors.textLight),
-            const SizedBox(height: 16),
-            Text('Shift Belum Dibuka', style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-            const SizedBox(height: 8),
-            Text('Buka shift di menu Shift Management untuk memulai transaksi.', style: GoogleFonts.outfit(fontSize: 16, color: AppColors.textLight)),
-          ],
+        child: Container(
+          width: 480,
+          padding: const EdgeInsets.all(36),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 20,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.lock_clock_outlined, size: 54, color: AppColors.primary),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Shift Kasir Belum Dibuka',
+                style: GoogleFonts.outfit(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textDark,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Buka shift kasir terlebih dahulu untuk mulai melayani transaksi penjualan dan mencatat uang kas secara akurat.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.outfit(fontSize: 14, color: AppColors.textLight),
+              ),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    final res = await OpenShiftCard.show(context);
+                    if (res == true) {
+                      await ShiftService.instance.refreshActiveShift();
+                      if (mounted) setState(() => _isShiftOpened = true);
+                    }
+                  },
+                  icon: const Icon(Icons.play_arrow_rounded, color: Colors.white),
+                  label: Text(
+                    'Buka Shift Sekarang',
+                    style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 44,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    mainLayoutTabNotifier.value = 13; // Navigate to Shift tab
+                  },
+                  icon: const Icon(Icons.schedule_outlined, size: 18),
+                  label: Text(
+                    'Ke Halaman Manajemen Shift',
+                    style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -242,6 +335,15 @@ class _PosScreenState extends State<PosScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                ValueListenableBuilder<CashShift?>(
+                  valueListenable: ShiftService.instance.activeShiftNotifier,
+                  builder: (context, activeShift, _) {
+                    if (activeShift != null) {
+                      return _buildShiftBar(activeShift);
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
                 _buildSearchBar(),
                 const SizedBox(height: 16),
                 Text('Fast Items / Terlaris', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: AppColors.textLight)),
@@ -1054,8 +1156,118 @@ class _PosScreenState extends State<PosScreen> {
     );
   }
 
+  Widget _buildShiftBar(CashShift shift) {
+    final currencyFormat = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.primary.withOpacity(0.15)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.success.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.circle, color: AppColors.success, size: 8),
+                const SizedBox(width: 6),
+                Text(
+                  shift.shiftNumber,
+                  style: GoogleFonts.outfit(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.success,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            'Kasir: ${shift.cashierName ?? 'Kasir'}',
+            style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
+          ),
+          const SizedBox(width: 16),
+          Container(height: 16, width: 1, color: Colors.grey.shade300),
+          const SizedBox(width: 16),
+          Text(
+            'Kas di Laci: ',
+            style: GoogleFonts.outfit(fontSize: 12, color: AppColors.textLight),
+          ),
+          Text(
+            currencyFormat.format(shift.expectedCash),
+            style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary),
+          ),
+          const Spacer(),
+          // Quick actions
+          TextButton.icon(
+            onPressed: () async {
+              final res = await CashMovementDialog.show(context, shift: shift, initialType: 'IN');
+              if (res == true) ShiftService.instance.refreshActiveShift();
+            },
+            icon: const Icon(Icons.south_west_rounded, size: 15, color: AppColors.success),
+            label: Text('Cash In', style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.success)),
+            style: TextButton.styleFrom(
+              backgroundColor: AppColors.success.withOpacity(0.08),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+          const SizedBox(width: 8),
+          TextButton.icon(
+            onPressed: () async {
+              final res = await CashMovementDialog.show(context, shift: shift, initialType: 'OUT');
+              if (res == true) ShiftService.instance.refreshActiveShift();
+            },
+            icon: const Icon(Icons.north_east_rounded, size: 15, color: const Color(0xFFE53935)),
+            label: Text('Cash Out', style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFFE53935))),
+            style: TextButton.styleFrom(
+              backgroundColor: const Color(0xFFE53935).withOpacity(0.08),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+          const SizedBox(width: 8),
+          TextButton.icon(
+            onPressed: () async {
+              final res = await CloseShiftDialog.show(context, shift: shift);
+              if (res == true) {
+                ShiftService.instance.refreshActiveShift();
+              }
+            },
+            icon: const Icon(Icons.lock_clock_outlined, size: 15, color: AppColors.textDark),
+            label: Text('Tutup Shift', style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.grey.shade100,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _processTransaction(double paidAmount, double changeAmount, String finalMethod) async {
     try {
+      final userId = AuthService().currentUser?['id'] as int?;
+      final currentShiftId = ShiftService.instance.currentShift?.id;
+
       await DatabaseHelper.instance.saveTransaction(
         subtotal: _subtotal,
         tax: _tax,
@@ -1064,7 +1276,12 @@ class _PosScreenState extends State<PosScreen> {
         changeAmount: changeAmount,
         paymentMethod: finalMethod,
         cartItems: _cart.items,
+        cashierId: userId,
+        shiftId: currentShiftId,
       );
+
+      // Refresh active shift summary to reflect latest sales immediately
+      ShiftService.instance.refreshActiveShift();
 
       if (mounted) {
         _showReceiptDialog(

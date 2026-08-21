@@ -17,6 +17,7 @@ import 'categories_screen.dart';
 import 'reports_screen.dart';
 import 'backup_restore_screen.dart';
 import 'audit_trail_screen.dart';
+import 'shift/shift_screen.dart';
 import '../services/auth_service.dart';
 import '../services/scanner_service.dart';
 import '../main.dart';
@@ -132,6 +133,9 @@ class _MainLayoutState extends State<MainLayout> {
         break;
       case 12:
         activeScreen = const AuditTrailScreen();
+        break;
+      case 13:
+        activeScreen = const ShiftScreen();
         break;
       default:
         activeScreen = const Center(child: Text('Coming Soon'));
