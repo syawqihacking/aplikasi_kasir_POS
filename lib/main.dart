@@ -27,7 +27,7 @@ void main() async {
   
   // Run initial Supabase sync (non-blocking)
   SupabaseSyncService().syncUnsyncedData().catchError((e) {
-    print('Initial sync error: $e');
+    debugPrint('Initial sync error: $e');
   });
 
   runApp(const MyApp());

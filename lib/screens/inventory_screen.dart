@@ -293,7 +293,7 @@ class _InventoryRestockTabState extends State<InventoryRestockTab> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))
                 ],
               ),
               child: _products.isEmpty
@@ -320,7 +320,7 @@ class _InventoryRestockTabState extends State<InventoryRestockTab> {
                             leading: Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: isLowStock ? AppColors.danger.withOpacity(0.1) : AppColors.success.withOpacity(0.1),
+                                color: isLowStock ? AppColors.danger.withValues(alpha: 0.1) : AppColors.success.withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
@@ -343,7 +343,7 @@ class _InventoryRestockTabState extends State<InventoryRestockTab> {
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                   margin: const EdgeInsets.only(right: 16),
                                   decoration: BoxDecoration(
-                                    color: isLowStock ? AppColors.danger.withOpacity(0.1) : AppColors.success.withOpacity(0.1),
+                                    color: isLowStock ? AppColors.danger.withValues(alpha: 0.1) : AppColors.success.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: Text(

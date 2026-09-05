@@ -120,7 +120,7 @@ class _SalesChartState extends State<SalesChart> {
                               horizontalInterval: 500000,
                               getDrawingHorizontalLine: (value) {
                                 return FlLine(
-                                  color: Colors.grey.withOpacity(0.2),
+                                  color: Colors.grey.withValues(alpha: 0.2),
                                   strokeWidth: 1,
                                 );
                               },
@@ -191,7 +191,7 @@ class _SalesChartState extends State<SalesChart> {
                                 dotData: const FlDotData(show: true),
                                 belowBarData: BarAreaData(
                                   show: true,
-                                  color: AppColors.primary.withOpacity(0.1),
+                                  color: AppColors.primary.withValues(alpha: 0.1),
                                 ),
                               ),
                               LineChartBarData(
@@ -206,7 +206,7 @@ class _SalesChartState extends State<SalesChart> {
                                 dotData: const FlDotData(show: true),
                                 belowBarData: BarAreaData(
                                   show: true,
-                                  color: AppColors.warning.withOpacity(0.1),
+                                  color: AppColors.warning.withValues(alpha: 0.1),
                                 ),
                               ),
                             ],

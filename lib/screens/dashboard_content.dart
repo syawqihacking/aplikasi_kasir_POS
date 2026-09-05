@@ -74,7 +74,7 @@ class _DashboardContentState extends State<DashboardContent> {
           style: OutlinedButton.styleFrom(
             backgroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            side: BorderSide(color: AppColors.primary.withOpacity(0.4)),
+            side: BorderSide(color: AppColors.primary.withValues(alpha: 0.4)),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         ),

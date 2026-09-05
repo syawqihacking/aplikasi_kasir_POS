@@ -5,7 +5,7 @@ import '../database/database_helper.dart';
 import 'package:path_provider/path_provider.dart';
 
 class BackupService {
-  static const int MAX_BACKUPS = 5;
+  static const int maxBackups = 5;
   
   static Future<String> _getBackupDirectory() async {
     final dir = await getApplicationDocumentsDirectory();
@@ -81,8 +81,8 @@ class BackupService {
     
     files.sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
     
-    if (files.length > MAX_BACKUPS) {
-      for (int i = MAX_BACKUPS; i < files.length; i++) {
+    if (files.length > maxBackups) {
+      for (int i = maxBackups; i < files.length; i++) {
         await files[i].delete();
       }
     }

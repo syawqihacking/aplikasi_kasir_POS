@@ -75,7 +75,7 @@ class _CashFlowScreenState extends State<CashFlowScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: isIN ? AppColors.success.withOpacity(0.1) : AppColors.danger.withOpacity(0.1),
+                    color: isIN ? AppColors.success.withValues(alpha: 0.1) : AppColors.danger.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
@@ -213,7 +213,7 @@ class _CashFlowScreenState extends State<CashFlowScreen> {
                     userId: userId,
                   );
 
-                  if (!mounted) return;
+                  if (!context.mounted) return;
                   Navigator.pop(context);
                   _loadData();
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -388,7 +388,7 @@ class _CashFlowScreenState extends State<CashFlowScreen> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
+                      color: Colors.black.withValues(alpha: 0.03),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -401,7 +401,7 @@ class _CashFlowScreenState extends State<CashFlowScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.receipt_long_outlined, size: 64, color: AppColors.textLight.withOpacity(0.5)),
+                                Icon(Icons.receipt_long_outlined, size: 64, color: AppColors.textLight.withValues(alpha: 0.5)),
                                 const SizedBox(height: 16),
                                 Text(
                                   'Belum Ada Catatan Pemasukan atau Pengeluaran',
@@ -442,8 +442,8 @@ class _CashFlowScreenState extends State<CashFlowScreen> {
                                         padding: const EdgeInsets.all(12),
                                         decoration: BoxDecoration(
                                           color: isIN
-                                              ? AppColors.success.withOpacity(0.1)
-                                              : AppColors.danger.withOpacity(0.1),
+                                              ? AppColors.success.withValues(alpha: 0.1)
+                                              : AppColors.danger.withValues(alpha: 0.1),
                                           borderRadius: BorderRadius.circular(12),
                                         ),
                                         child: Icon(
@@ -463,8 +463,8 @@ class _CashFlowScreenState extends State<CashFlowScreen> {
                                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                                   decoration: BoxDecoration(
                                                     color: isIN
-                                                        ? AppColors.success.withOpacity(0.15)
-                                                        : AppColors.danger.withOpacity(0.15),
+                                                        ? AppColors.success.withValues(alpha: 0.15)
+                                                        : AppColors.danger.withValues(alpha: 0.15),
                                                     borderRadius: BorderRadius.circular(6),
                                                   ),
                                                   child: Text(
@@ -541,19 +541,19 @@ class _CashFlowScreenState extends State<CashFlowScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(color: color.withOpacity(0.2), width: 1.5),
+        border: Border.all(color: color.withValues(alpha: 0.2), width: 1.5),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(icon, color: color, size: 28),

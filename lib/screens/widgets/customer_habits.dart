@@ -42,7 +42,7 @@ class CustomerHabits extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                  border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(

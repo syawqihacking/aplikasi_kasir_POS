@@ -492,7 +492,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                   )
@@ -530,7 +530,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                                       Container(
                                         padding: const EdgeInsets.all(12),
                                         decoration: BoxDecoration(
-                                          color: isActive ? AppColors.primary.withOpacity(0.1) : AppColors.danger.withOpacity(0.1),
+                                          color: isActive ? AppColors.primary.withValues(alpha: 0.1) : AppColors.danger.withValues(alpha: 0.1),
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(Icons.inventory_2, color: isActive ? AppColors.primary : AppColors.danger),
@@ -595,7 +595,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                                             Container(
                                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                               decoration: BoxDecoration(
-                                                color: isActive ? AppColors.success.withOpacity(0.1) : AppColors.danger.withOpacity(0.1),
+                                                color: isActive ? AppColors.success.withValues(alpha: 0.1) : AppColors.danger.withValues(alpha: 0.1),
                                                 borderRadius: BorderRadius.circular(4),
                                               ),
                                               child: Text(
@@ -623,16 +623,11 @@ class _ProductsScreenState extends State<ProductsScreen> {
                                             icon: const Icon(Icons.print_outlined, color: Colors.blueGrey, size: 20),
                                             tooltip: 'Print Label',
                                             onPressed: () {
-                                              if (p.barcode != null && p.barcode!.isNotEmpty) {
-                                                showDialog(
-                                                  context: context,
-                                                  builder: (context) => PrintBarcodeDialog(product: p.toMap()),
-                                                );
-                                              } else {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(content: Text('Please generate a barcode first.'), backgroundColor: AppColors.warning),
-                                                );
-                                              }
+                                              // Always open dialog — it auto-generates barcode if missing
+                                              showDialog(
+                                                context: context,
+                                                builder: (context) => PrintBarcodeDialog(product: p.toMap()),
+                                              ).then((_) => _loadData()); // Refresh list to show new barcode
                                             },
                                           ),
                                           IconButton(

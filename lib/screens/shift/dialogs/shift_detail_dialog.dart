@@ -118,7 +118,7 @@ class _ShiftDetailDialogState extends State<ShiftDetailDialog> with SingleTicker
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.1),
+                              color: AppColors.primary.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: const Icon(Icons.schedule, color: AppColors.primary, size: 28),
@@ -143,8 +143,8 @@ class _ShiftDetailDialogState extends State<ShiftDetailDialog> with SingleTicker
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(
                                         color: _shift!.isOpen
-                                            ? AppColors.success.withOpacity(0.12)
-                                            : AppColors.primary.withOpacity(0.12),
+                                            ? AppColors.success.withValues(alpha: 0.12)
+                                            : AppColors.primary.withValues(alpha: 0.12),
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Text(
@@ -188,7 +188,11 @@ class _ShiftDetailDialogState extends State<ShiftDetailDialog> with SingleTicker
                           ),
                           const SizedBox(width: 8),
                           IconButton(
-                            onPressed: () => Navigator.pop(context),
+                            onPressed: () {
+                              if (ModalRoute.of(context)?.isCurrent == true) {
+                                Navigator.pop(context);
+                              }
+                            },
                             icon: const Icon(Icons.close, color: AppColors.textLight),
                           ),
                         ],
@@ -199,9 +203,9 @@ class _ShiftDetailDialogState extends State<ShiftDetailDialog> with SingleTicker
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.04),
+                          color: AppColors.primary.withValues(alpha: 0.04),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.primary.withOpacity(0.12)),
+                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.12)),
                         ),
                         child: Row(
                           children: [
@@ -414,7 +418,7 @@ class _ShiftDetailDialogState extends State<ShiftDetailDialog> with SingleTicker
           leading: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: isIN ? AppColors.success.withOpacity(0.12) : const Color(0xFFE53935).withOpacity(0.12),
+              color: isIN ? AppColors.success.withValues(alpha: 0.12) : const Color(0xFFE53935).withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
@@ -466,7 +470,7 @@ class _ShiftDetailDialogState extends State<ShiftDetailDialog> with SingleTicker
           leading: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(Icons.receipt_outlined, color: AppColors.primary, size: 20),

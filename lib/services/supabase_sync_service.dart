@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../database/database_helper.dart';
 
@@ -14,15 +15,15 @@ class SupabaseSyncService {
     final supabaseUrl = 'https://txxcfqnfusjybwkrbsyq.supabase.co';
     final supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4eGNmcW5mdXNqeWJ3a3Jic3lxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MDY0NjUsImV4cCI6MjEwMjE4MjQ2NX0.dGIcgZP_fnDGEP454wdsnClknBLp_U1iGklx91dRK5s';
 
-    if (supabaseUrl != null && supabaseUrl.isNotEmpty && supabaseAnonKey != null && supabaseAnonKey.isNotEmpty) {
+    if (supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty) {
       try {
         await Supabase.initialize(
           url: supabaseUrl,
-          anonKey: supabaseAnonKey,
+          publishableKey: supabaseAnonKey,
         );
         _isInitialized = true;
       } catch (e) {
-        print('Error initializing Supabase: $e');
+        debugPrint('Error initializing Supabase: $e');
       }
     }
   }
@@ -57,7 +58,7 @@ class SupabaseSyncService {
             });
             syncedTxnIds.add(txn['id']);
           } catch (e) {
-            print('Error syncing transaction ${txn["id"]}: $e');
+            debugPrint('Error syncing transaction ${txn["id"]}: $e');
           }
         }
         if (syncedTxnIds.isNotEmpty) {
@@ -82,7 +83,7 @@ class SupabaseSyncService {
             });
             syncedMovementIds.add(movement['id']);
           } catch (e) {
-            print('Error syncing cash movement ${movement["id"]}: $e');
+            debugPrint('Error syncing cash movement ${movement["id"]}: $e');
           }
         }
         if (syncedMovementIds.isNotEmpty) {
@@ -107,7 +108,7 @@ class SupabaseSyncService {
             });
             syncedUserIds.add(user['id']);
           } catch (e) {
-            print('Error syncing user ${user["id"]}: $e');
+            debugPrint('Error syncing user ${user["id"]}: $e');
           }
         }
         if (syncedUserIds.isNotEmpty) {
@@ -115,7 +116,7 @@ class SupabaseSyncService {
         }
       }
     } catch (e) {
-      print('Global sync error: $e');
+      debugPrint('Global sync error: $e');
     }
   }
 
@@ -132,9 +133,9 @@ class SupabaseSyncService {
       await supabase.from('transactions_sync').delete().eq('is_downloaded', true);
       await supabase.from('cash_movements_sync').delete().eq('is_downloaded', true);
       await supabase.from('users_sync').delete().eq('is_downloaded', true);
-      print('Supabase cleanup successful');
+      debugPrint('Supabase cleanup successful');
     } catch (e) {
-      print('Error cleaning up Supabase data: $e');
+      debugPrint('Error cleaning up Supabase data: $e');
     }
   }
 }

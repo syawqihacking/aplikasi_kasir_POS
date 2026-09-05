@@ -31,10 +31,10 @@ class QuickActionBar extends StatelessWidget {
           final action = _actions[index];
           return ActionChip(
             label: Text(action, style: GoogleFonts.outfit(fontSize: 12, color: AppColors.primary)),
-            backgroundColor: AppColors.primary.withOpacity(0.1),
+            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
-              side: BorderSide(color: AppColors.primary.withOpacity(0.2)),
+              side: BorderSide(color: AppColors.primary.withValues(alpha: 0.2)),
             ),
             onPressed: () => onActionSelected(action),
           );

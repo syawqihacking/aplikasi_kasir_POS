@@ -57,7 +57,7 @@ class _OpenShiftCardState extends State<OpenShiftCard> {
     symbol: 'Rp ',
     decimalDigits: 0,
   );
-  final _dateFormat = DateFormat('EEEE, dd MMMM yyyy • HH:mm:ss');
+
 
   @override
   void initState() {
@@ -102,6 +102,7 @@ class _OpenShiftCardState extends State<OpenShiftCard> {
   }
 
   Future<void> _startShift() async {
+    if (_isSubmitting) return; // Prevent double-execution
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCashierId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -162,7 +163,7 @@ class _OpenShiftCardState extends State<OpenShiftCard> {
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -180,7 +181,7 @@ class _OpenShiftCardState extends State<OpenShiftCard> {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.12),
+                    color: AppColors.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: const Icon(Icons.lock_open_rounded, color: AppColors.primary, size: 30),
@@ -207,7 +208,11 @@ class _OpenShiftCardState extends State<OpenShiftCard> {
                 ),
                 if (widget.isDialog)
                   IconButton(
-                    onPressed: () => Navigator.pop(context, false),
+                    onPressed: () {
+                      if (ModalRoute.of(context)?.isCurrent == true) {
+                        Navigator.pop(context, false);
+                      }
+                    },
                     icon: const Icon(Icons.close, color: AppColors.textLight),
                   ),
               ],
@@ -251,7 +256,7 @@ class _OpenShiftCardState extends State<OpenShiftCard> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
@@ -279,7 +284,7 @@ class _OpenShiftCardState extends State<OpenShiftCard> {
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<int>(
-              value: _selectedCashierId,
+              initialValue: _selectedCashierId,
               items: _users.map((u) {
                 final id = u['id'] as int;
                 final name = u['full_name'] ?? u['username'] ?? 'User #$id';
@@ -328,7 +333,7 @@ class _OpenShiftCardState extends State<OpenShiftCard> {
                 ),
                 hintText: '0',
                 filled: true,
-                fillColor: AppColors.primary.withOpacity(0.04),
+                fillColor: AppColors.primary.withValues(alpha: 0.04),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide(color: Colors.grey.shade300),

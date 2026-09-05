@@ -5,6 +5,7 @@ import '../../database/database_helper.dart';
 import '../../services/auth_service.dart';
 import '../login_screen.dart';
 import '../../main.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../services/shift_service.dart';
 import '../../models/shift.dart';
@@ -35,14 +36,10 @@ class Sidebar extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: Row(
               children: [
-                Container(
+                Image.asset(
+                  'assets/logo/Minimalist Red Shopping Cart Logo.png',
                   width: 32,
                   height: 32,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.shopping_bag, color: Colors.white, size: 20),
                 ),
                 const SizedBox(width: 12),
                 Text(
@@ -100,6 +97,7 @@ class Sidebar extends StatelessWidget {
                     ),
                   ),
                   if (!isKasir && auth.hasPermission('products', 'view')) _buildMenuItem(Icons.shopping_cart_outlined, 'Products', 2),
+                  if (!isKasir && auth.hasPermission('products', 'view')) _buildMenuItem(Icons.bar_chart_outlined, 'Bulk Barcode', 14),
                   if (!isKasir && auth.hasPermission('inventory', 'view')) _buildMenuItem(Icons.inventory_outlined, 'Inventory (Restock)', 3),
                   if (!isKasir) ...[
                     _buildMenuSection('FINANCIAL'),
@@ -198,7 +196,7 @@ class Sidebar extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: !isDark ? Colors.white : Colors.transparent,
                         borderRadius: BorderRadius.circular(12),
-                        boxShadow: !isDark ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)] : null,
+                        boxShadow: !isDark ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)] : null,
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -219,7 +217,7 @@ class Sidebar extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: isDark ? const Color(0xFF3A3A3A) : Colors.transparent,
                         borderRadius: BorderRadius.circular(12),
-                        boxShadow: isDark ? [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4)] : null,
+                        boxShadow: isDark ? [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 4)] : null,
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -258,7 +256,7 @@ class Sidebar extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.danger.withOpacity(0.1),
+            color: AppColors.danger.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Row(

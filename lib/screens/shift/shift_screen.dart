@@ -160,7 +160,7 @@ class _ShiftScreenState extends State<ShiftScreen> with SingleTickerProviderStat
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
+                    color: Colors.black.withValues(alpha: 0.03),
                     blurRadius: 10,
                     offset: const Offset(0, 2),
                   ),
@@ -261,9 +261,9 @@ class _ShiftScreenState extends State<ShiftScreen> with SingleTickerProviderStat
               return Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
-                  color: AppColors.success.withOpacity(0.1),
+                  color: AppColors.success.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.success.withOpacity(0.3)),
+                  border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
@@ -284,9 +284,9 @@ class _ShiftScreenState extends State<ShiftScreen> with SingleTickerProviderStat
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.amber.withOpacity(0.1),
+                color: Colors.amber.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
@@ -363,7 +363,7 @@ class _ShiftScreenState extends State<ShiftScreen> with SingleTickerProviderStat
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.02),
+                color: Colors.black.withValues(alpha: 0.02),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -470,7 +470,7 @@ class _ShiftScreenState extends State<ShiftScreen> with SingleTickerProviderStat
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -544,7 +544,11 @@ class _ShiftScreenState extends State<ShiftScreen> with SingleTickerProviderStat
                                         s.shiftNumber,
                                         style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: AppColors.primary),
                                       ),
-                                      onTap: () => ShiftDetailDialog.show(context, shiftId: s.id ?? 1),
+                                      onTap: () {
+                                        if (ModalRoute.of(context)?.isCurrent == true) {
+                                          ShiftDetailDialog.show(context, shiftId: s.id ?? 1);
+                                        }
+                                      },
                                     ),
                                     DataCell(
                                       Text(s.cashierName ?? 'Kasir', style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
@@ -580,7 +584,7 @@ class _ShiftScreenState extends State<ShiftScreen> with SingleTickerProviderStat
                                           ? Container(
                                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                               decoration: BoxDecoration(
-                                                color: diffColor.withOpacity(0.1),
+                                                color: diffColor.withValues(alpha: 0.1),
                                                 borderRadius: BorderRadius.circular(8),
                                               ),
                                               child: Text(
@@ -598,7 +602,7 @@ class _ShiftScreenState extends State<ShiftScreen> with SingleTickerProviderStat
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                         decoration: BoxDecoration(
-                                          color: s.isOpen ? AppColors.success.withOpacity(0.12) : AppColors.primary.withOpacity(0.12),
+                                          color: s.isOpen ? AppColors.success.withValues(alpha: 0.12) : AppColors.primary.withValues(alpha: 0.12),
                                           borderRadius: BorderRadius.circular(8),
                                         ),
                                         child: Text(
@@ -618,19 +622,25 @@ class _ShiftScreenState extends State<ShiftScreen> with SingleTickerProviderStat
                                           IconButton(
                                             icon: const Icon(Icons.visibility_outlined, size: 18, color: AppColors.primary),
                                             tooltip: 'Lihat Detail Shift',
-                                            onPressed: () => ShiftDetailDialog.show(context, shiftId: s.id ?? 1),
+                                            onPressed: () {
+                                              if (ModalRoute.of(context)?.isCurrent == true) {
+                                                ShiftDetailDialog.show(context, shiftId: s.id ?? 1);
+                                              }
+                                            },
                                           ),
                                           IconButton(
                                             icon: const Icon(Icons.print_outlined, size: 18, color: AppColors.textLight),
                                             tooltip: 'Cetak Slip Shift',
                                             onPressed: () async {
+                                              final ctx = context;
                                               final details = await ShiftService.instance.getShiftDetails(s.id ?? 1);
-                                              if (details != null && context.mounted) {
+                                              if (!ctx.mounted) return;
+                                              if (details != null) {
                                                 final shiftObj = CashShift.fromMap(details);
                                                 final movements = (details['movements'] as List?)?.cast<Map<String, dynamic>>() ?? [];
                                                 final transactions = (details['transactions'] as List?)?.cast<Map<String, dynamic>>() ?? [];
                                                 ShiftReceiptDialog.show(
-                                                  context,
+                                                  ctx,
                                                   shift: shiftObj,
                                                   movements: movements,
                                                   transactions: transactions,

@@ -18,6 +18,7 @@ import 'reports_screen.dart';
 import 'backup_restore_screen.dart';
 import 'audit_trail_screen.dart';
 import 'shift/shift_screen.dart';
+import 'bulk_barcode_screen.dart';
 import '../services/auth_service.dart';
 import '../services/scanner_service.dart';
 import '../main.dart';
@@ -137,6 +138,9 @@ class _MainLayoutState extends State<MainLayout> {
       case 13:
         activeScreen = const ShiftScreen();
         break;
+      case 14:
+        activeScreen = const BulkBarcodeScreen();
+        break;
       default:
         activeScreen = const Center(child: Text('Coming Soon'));
     }
@@ -199,12 +203,12 @@ class _MainLayoutState extends State<MainLayout> {
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               )
                             ],
-                            border: Border.all(color: badgeColor.withOpacity(0.5)),
+                            border: Border.all(color: badgeColor.withValues(alpha: 0.5)),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,

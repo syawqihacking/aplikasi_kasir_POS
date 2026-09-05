@@ -87,6 +87,7 @@ class _CashMovementDialogState extends State<CashMovementDialog> {
   }
 
   Future<void> _submit() async {
+    if (_isSaving) return;
     if (!_formKey.currentState!.validate()) return;
 
     final amount = double.tryParse(_amountController.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0.0;
@@ -170,7 +171,7 @@ class _CashMovementDialogState extends State<CashMovementDialog> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: primaryColor.withOpacity(0.12),
+                      color: primaryColor.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Icon(
@@ -203,7 +204,11 @@ class _CashMovementDialogState extends State<CashMovementDialog> {
                     ),
                   ),
                   IconButton(
-                    onPressed: () => Navigator.pop(context, false),
+                    onPressed: () {
+                      if (ModalRoute.of(context)?.isCurrent == true) {
+                        Navigator.pop(context, false);
+                      }
+                    },
                     icon: const Icon(Icons.close, color: AppColors.textLight),
                   )
                 ],
@@ -228,7 +233,7 @@ class _CashMovementDialogState extends State<CashMovementDialog> {
                             color: isIN ? AppColors.success : Colors.transparent,
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: isIN
-                                ? [BoxShadow(color: AppColors.success.withOpacity(0.3), blurRadius: 6)]
+                                ? [BoxShadow(color: AppColors.success.withValues(alpha: 0.3), blurRadius: 6)]
                                 : null,
                           ),
                           child: Center(
@@ -253,7 +258,7 @@ class _CashMovementDialogState extends State<CashMovementDialog> {
                             color: !isIN ? const Color(0xFFE53935) : Colors.transparent,
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: !isIN
-                                ? [BoxShadow(color: const Color(0xFFE53935).withOpacity(0.3), blurRadius: 6)]
+                                ? [BoxShadow(color: const Color(0xFFE53935).withValues(alpha: 0.3), blurRadius: 6)]
                                 : null,
                           ),
                           child: Center(
@@ -303,7 +308,7 @@ class _CashMovementDialogState extends State<CashMovementDialog> {
                   ),
                   hintText: '0',
                   filled: true,
-                  fillColor: primaryColor.withOpacity(0.04),
+                  fillColor: primaryColor.withValues(alpha: 0.04),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(color: Colors.grey.shade300),
@@ -358,7 +363,7 @@ class _CashMovementDialogState extends State<CashMovementDialog> {
                   return ChoiceChip(
                     label: Text(r, style: GoogleFonts.outfit(fontSize: 12)),
                     selected: isSelected,
-                    selectedColor: primaryColor.withOpacity(0.18),
+                    selectedColor: primaryColor.withValues(alpha: 0.18),
                     labelStyle: GoogleFonts.outfit(
                       color: isSelected ? primaryColor : AppColors.textDark,
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -388,7 +393,11 @@ class _CashMovementDialogState extends State<CashMovementDialog> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: _isSaving ? null : () => Navigator.pop(context, false),
+                      onPressed: _isSaving ? null : () {
+                        if (ModalRoute.of(context)?.isCurrent == true) {
+                          Navigator.pop(context, false);
+                        }
+                      },
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),

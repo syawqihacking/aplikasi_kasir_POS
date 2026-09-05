@@ -159,7 +159,7 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               margin: const EdgeInsets.only(bottom: 24),
-              decoration: BoxDecoration(color: AppColors.warning.withOpacity(0.1), border: Border.all(color: AppColors.warning), borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(color: AppColors.warning.withValues(alpha: 0.1), border: Border.all(color: AppColors.warning), borderRadius: BorderRadius.circular(8)),
               child: Row(
                 children: [
                   const Icon(Icons.warning_amber_rounded, color: AppColors.warning),

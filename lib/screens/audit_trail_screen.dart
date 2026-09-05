@@ -123,7 +123,7 @@ class _AuditTrailScreenState extends State<AuditTrailScreen> {
                             leading: Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: actionColor.withOpacity(0.1),
+                                color: actionColor.withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(Icons.history, color: actionColor),
@@ -138,9 +138,9 @@ class _AuditTrailScreenState extends State<AuditTrailScreen> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: actionColor.withOpacity(0.1),
+                                    color: actionColor.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(color: actionColor.withOpacity(0.3)),
+                                    border: Border.all(color: actionColor.withValues(alpha: 0.3)),
                                   ),
                                   child: Text(
                                     log['action'] ?? '-',

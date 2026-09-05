@@ -43,7 +43,7 @@ class ProductStatistic extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                  border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -105,7 +105,7 @@ class ProductStatistic extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.success.withOpacity(0.2),
+                        color: AppColors.success.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -159,7 +159,7 @@ class ProductStatistic extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: isPositive ? AppColors.success.withOpacity(0.2) : AppColors.danger.withOpacity(0.2),
+            color: isPositive ? AppColors.success.withValues(alpha: 0.2) : AppColors.danger.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
@@ -193,7 +193,7 @@ class ConcentricCirclesPainter extends CustomPainter {
       
       // Draw background circle
       final bgPaint = Paint()
-        ..color = Colors.grey.withOpacity(0.1)
+        ..color = Colors.grey.withValues(alpha: 0.1)
         ..style = PaintingStyle.stroke
         ..strokeWidth = strokeWidth
         ..strokeCap = StrokeCap.round;

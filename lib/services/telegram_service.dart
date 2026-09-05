@@ -1,7 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import '../database/database_helper.dart';
 
 class TelegramService {
   static final TelegramService _instance = TelegramService._internal();
@@ -43,7 +43,7 @@ class TelegramService {
       
       return response.statusCode == 200;
     } catch (e) {
-      print('Error sending telegram message: $e');
+      debugPrint('Error sending telegram message: $e');
       return false;
     }
   }
@@ -66,7 +66,7 @@ class TelegramService {
       var response = await request.send();
       return response.statusCode == 200;
     } catch (e) {
-      print('Error sending telegram document: $e');
+      debugPrint('Error sending telegram document: $e');
       return false;
     }
   }

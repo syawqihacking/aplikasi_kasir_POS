@@ -42,7 +42,7 @@ class CustomerGrowth extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                  border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -77,12 +77,12 @@ class CustomerGrowth extends StatelessWidget {
                       Positioned(
                         top: 10,
                         left: 10,
-                        child: _buildBubble(50, AppColors.primary.withOpacity(0.5), '287'),
+                        child: _buildBubble(50, AppColors.primary.withValues(alpha: 0.5), '287'),
                       ),
                       Positioned(
                         bottom: 30,
                         right: 30,
-                        child: _buildBubble(40, AppColors.primaryLight.withOpacity(0.5), '812'),
+                        child: _buildBubble(40, AppColors.primaryLight.withValues(alpha: 0.5), '812'),
                       ),
                     ],
                   ),

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -6,18 +7,17 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:image/image.dart' as img;
 import '../theme/app_colors.dart';
 import '../database/database_helper.dart';
 import '../services/scanner_service.dart';
 import '../services/cart_service.dart';
-import '../services/auth_service.dart';
 import '../services/shift_service.dart';
 import '../models/shift.dart';
+import '../main.dart';
 import 'shift/widgets/open_shift_card.dart';
 import 'shift/dialogs/cash_movement_dialog.dart';
 import 'shift/dialogs/close_shift_dialog.dart';
-import 'shift/dialogs/shift_detail_dialog.dart';
-import '../main.dart';
 import 'widgets/add_product_dialog.dart';
 
 class PosScreen extends StatefulWidget {
@@ -37,6 +37,9 @@ class _PosScreenState extends State<PosScreen> {
   String _selectedPaymentMethod = 'Cash';
   double _discountTotal = 0.0;
   String _storeName = 'Store Name';
+  String _storeAddress = 'Alamat Toko';
+  String _storePhone = '-';
+  String _storeNib = '-';
   
   bool _isLoadingShift = true;
   bool _isShiftOpened = false;
@@ -96,6 +99,15 @@ class _PosScreenState extends State<PosScreen> {
         }
         if (settings.containsKey('store_name')) {
           _storeName = settings['store_name']!;
+        }
+        if (settings.containsKey('store_address')) {
+          _storeAddress = settings['store_address']!;
+        }
+        if (settings.containsKey('store_phone')) {
+          _storePhone = settings['store_phone']!;
+        }
+        if (settings.containsKey('store_nib')) {
+          _storeNib = settings['store_nib']!;
         }
       });
     }
@@ -209,7 +221,7 @@ class _PosScreenState extends State<PosScreen> {
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 20,
                 offset: const Offset(0, 6),
               ),
@@ -221,7 +233,7 @@ class _PosScreenState extends State<PosScreen> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.lock_clock_outlined, size: 54, color: AppColors.primary),
@@ -247,6 +259,7 @@ class _PosScreenState extends State<PosScreen> {
                 height: 48,
                 child: ElevatedButton.icon(
                   onPressed: () async {
+                    if (ModalRoute.of(context)?.isCurrent != true) return;
                     final res = await OpenShiftCard.show(context);
                     if (res == true) {
                       await ShiftService.instance.refreshActiveShift();
@@ -434,7 +447,7 @@ class _PosScreenState extends State<PosScreen> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(Icons.qr_code_scanner, color: AppColors.primary),
@@ -495,9 +508,9 @@ class _PosScreenState extends State<PosScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: AppColors.warning.withOpacity(0.1),
+                  color: AppColors.warning.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+                  border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
@@ -630,11 +643,15 @@ class _PosScreenState extends State<PosScreen> {
             children: [
               if (_cart.heldTransactions.isNotEmpty) ...[
                 InkWell(
-                  onTap: _showHeldTransactionsDialog,
+                  onTap: () {
+                    if (ModalRoute.of(context)?.isCurrent == true) {
+                      _showHeldTransactionsDialog();
+                    }
+                  },
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.list_alt, color: AppColors.primary, size: 20),
@@ -648,7 +665,7 @@ class _PosScreenState extends State<PosScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.pause_circle_outline, color: AppColors.primary, size: 20),
@@ -673,7 +690,7 @@ class _PosScreenState extends State<PosScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.1),
+                      color: Colors.orange.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.undo, color: Colors.orange, size: 20),
@@ -691,7 +708,7 @@ class _PosScreenState extends State<PosScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.danger.withOpacity(0.1),
+                    color: AppColors.danger.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(Icons.delete_sweep, color: AppColors.danger, size: 20),
@@ -1089,7 +1106,7 @@ class _PosScreenState extends State<PosScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
+                          color: AppColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -1164,21 +1181,23 @@ class _PosScreenState extends State<PosScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.primary.withOpacity(0.15)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.04),
+            color: AppColors.primary.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Row(
-        children: [
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.success.withOpacity(0.15),
+              color: AppColors.success.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -1213,7 +1232,7 @@ class _PosScreenState extends State<PosScreen> {
             currencyFormat.format(shift.expectedCash),
             style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary),
           ),
-          const Spacer(),
+          const SizedBox(width: 16),
           // Quick actions
           TextButton.icon(
             onPressed: () async {
@@ -1223,7 +1242,7 @@ class _PosScreenState extends State<PosScreen> {
             icon: const Icon(Icons.south_west_rounded, size: 15, color: AppColors.success),
             label: Text('Cash In', style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.success)),
             style: TextButton.styleFrom(
-              backgroundColor: AppColors.success.withOpacity(0.08),
+              backgroundColor: AppColors.success.withValues(alpha: 0.08),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
@@ -1234,10 +1253,10 @@ class _PosScreenState extends State<PosScreen> {
               final res = await CashMovementDialog.show(context, shift: shift, initialType: 'OUT');
               if (res == true) ShiftService.instance.refreshActiveShift();
             },
-            icon: const Icon(Icons.north_east_rounded, size: 15, color: const Color(0xFFE53935)),
+            icon: const Icon(Icons.north_east_rounded, size: 15, color: Color(0xFFE53935)),
             label: Text('Cash Out', style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFFE53935))),
             style: TextButton.styleFrom(
-              backgroundColor: const Color(0xFFE53935).withOpacity(0.08),
+              backgroundColor: const Color(0xFFE53935).withValues(alpha: 0.08),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
@@ -1260,15 +1279,13 @@ class _PosScreenState extends State<PosScreen> {
           ),
         ],
       ),
+      ),
     );
   }
 
   Future<void> _processTransaction(double paidAmount, double changeAmount, String finalMethod) async {
     try {
-      final userId = AuthService().currentUser?['id'] as int?;
-      final currentShiftId = ShiftService.instance.currentShift?.id;
-
-      await DatabaseHelper.instance.saveTransaction(
+      final invoiceNo = await DatabaseHelper.instance.saveTransaction(
         subtotal: _subtotal,
         tax: _tax,
         grandTotal: _grandTotal,
@@ -1276,15 +1293,18 @@ class _PosScreenState extends State<PosScreen> {
         changeAmount: changeAmount,
         paymentMethod: finalMethod,
         cartItems: _cart.items,
-        cashierId: userId,
-        shiftId: currentShiftId,
       );
 
       // Refresh active shift summary to reflect latest sales immediately
       ShiftService.instance.refreshActiveShift();
 
       if (mounted) {
+        final activeShift = ShiftService.instance.activeShiftNotifier.value;
+        final cashierName = activeShift?.cashierName ?? 'Admin';
+        
         _showReceiptDialog(
+          invoiceNo: invoiceNo,
+          cashierName: cashierName,
           subtotal: _subtotal,
           discount: _discountTotal,
           tax: _tax,
@@ -1313,6 +1333,8 @@ class _PosScreenState extends State<PosScreen> {
 
   Future<Uint8List> _generateReceiptPdf(
     PdfPageFormat format, {
+    required String invoiceNo,
+    required String cashierName,
     required double subtotal,
     required double discount,
     required double tax,
@@ -1324,95 +1346,124 @@ class _PosScreenState extends State<PosScreen> {
   }) async {
     final pdf = pw.Document();
     final dateStr = DateTime.now().toString().split('.')[0];
-    
+
+    Uint8List? logoBytes;
+    try {
+      final byteData = await rootBundle.load('assets/logo/Minimalist Red Shopping Cart Logo.png');
+      logoBytes = byteData.buffer.asUint8List();
+    } catch (_) {}
+
+    // Use built-in Courier font (monospaced, receipt-like appearance)
+    final receiptFont = pw.Font.courier();
+
+    // Use a very large height so content is never cut off on roll paper.
+    // Reduced margins for maximum printable area on 58mm paper.
+    final receiptFormat = PdfPageFormat(
+      58 * PdfPageFormat.mm,
+      300 * PdfPageFormat.mm,
+      marginLeft: 2 * PdfPageFormat.mm,
+      marginRight: 2 * PdfPageFormat.mm,
+      marginTop: 2 * PdfPageFormat.mm,
+      marginBottom: 2 * PdfPageFormat.mm,
+    );
+
     pdf.addPage(
       pw.Page(
-        pageFormat: PdfPageFormat.roll57,
+        pageFormat: receiptFormat,
+        theme: pw.ThemeData.withFont(base: receiptFont, bold: receiptFont),
         build: (pw.Context context) {
+          int totalQty = items.fold(0, (sum, item) => sum + (item['qty'] as int));
+          final dateOnly = dateStr.split(' ')[0];
+          final timeOnly = dateStr.split(' ')[1];
+          
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              pw.Center(
-                child: pw.Text(
-                  _storeName,
-                  style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
+              if (logoBytes != null) ...[
+                pw.Center(
+                  child: pw.Image(
+                    pw.MemoryImage(logoBytes),
+                    width: 120,
+                  ),
                 ),
-              ),
-              pw.Center(
-                child: pw.Text(
-                  'Date: $dateStr',
-                  style: const pw.TextStyle(fontSize: 7),
-                ),
-              ),
+                pw.SizedBox(height: 8),
+              ],
+              pw.Center(child: pw.Text(_storeName, style: pw.TextStyle(font: receiptFont, fontSize: 16, fontWeight: pw.FontWeight.bold))),
+              pw.SizedBox(height: 2),
+              pw.Center(child: pw.Text(_storeAddress, textAlign: pw.TextAlign.center, style: pw.TextStyle(font: receiptFont, fontSize: 10))),
+              pw.Center(child: pw.Text(_storePhone, style: pw.TextStyle(font: receiptFont, fontSize: 10))),
+              pw.Center(child: pw.Text(_storeNib, style: pw.TextStyle(font: receiptFont, fontSize: 10))),
+              pw.SizedBox(height: 4),
               pw.Divider(thickness: 0.5, borderStyle: pw.BorderStyle.dashed),
-              ...items.map((item) => pw.Padding(
-                padding: const pw.EdgeInsets.symmetric(vertical: 1),
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text(item['name'], style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
-                    pw.Row(
-                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                      children: [
-                        pw.Text('${item['qty']} x Rp ${item['sell_price'].toStringAsFixed(0)}', style: const pw.TextStyle(fontSize: 7)),
-                        pw.Text('Rp ${(item['qty'] * item['sell_price']).toStringAsFixed(0)}', style: const pw.TextStyle(fontSize: 7)),
-                      ],
-                    ),
-                  ],
-                ),
-              )),
+              pw.SizedBox(height: 2),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text(dateOnly, style: pw.TextStyle(font: receiptFont, fontSize: 10)),
+                      pw.Text(timeOnly, style: pw.TextStyle(font: receiptFont, fontSize: 10)),
+                    ]
+                  ),
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
+                    children: [
+                      pw.Text("kasir", style: pw.TextStyle(font: receiptFont, fontSize: 10)),
+                      pw.Text(cashierName, style: pw.TextStyle(font: receiptFont, fontSize: 10)),
+                    ]
+                  )
+                ]
+              ),
+              pw.SizedBox(height: 4),
+              pw.Text(invoiceNo, style: pw.TextStyle(font: receiptFont, fontSize: 10)),
+              pw.SizedBox(height: 2),
               pw.Divider(thickness: 0.5, borderStyle: pw.BorderStyle.dashed),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text('Subtotal:', style: const pw.TextStyle(fontSize: 8)),
-                  pw.Text('Rp ${subtotal.toStringAsFixed(0)}', style: const pw.TextStyle(fontSize: 8)),
-                ],
-              ),
-              if (discount > 0)
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text('Discount:', style: const pw.TextStyle(fontSize: 8)),
-                    pw.Text('-Rp ${discount.toStringAsFixed(0)}', style: const pw.TextStyle(fontSize: 8)),
-                  ],
-                ),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text('Tax:', style: const pw.TextStyle(fontSize: 8)),
-                  pw.Text('Rp ${tax.toStringAsFixed(0)}', style: const pw.TextStyle(fontSize: 8)),
-                ],
-              ),
+              pw.SizedBox(height: 2),
+              ...items.asMap().entries.map((entry) {
+                final idx = entry.key + 1;
+                final item = entry.value;
+                return pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(vertical: 2),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('$idx. ${item['name']}', style: pw.TextStyle(font: receiptFont, fontSize: 11, fontWeight: pw.FontWeight.bold)),
+                      pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                        children: [
+                          pw.Text('  ${item['qty']} x Rp${_formatNumber(item['sell_price'])}', style: pw.TextStyle(font: receiptFont, fontSize: 10)),
+                          pw.Text('Rp${_formatNumber(item['qty'] * item['sell_price'])}', style: pw.TextStyle(font: receiptFont, fontSize: 10)),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              }),
+              pw.SizedBox(height: 2),
               pw.Divider(thickness: 0.5, borderStyle: pw.BorderStyle.dashed),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text('Total:', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                  pw.Text('Rp ${grandTotal.toStringAsFixed(0)}', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                ],
-              ),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text('Paid ($paymentMethod):', style: const pw.TextStyle(fontSize: 7)),
-                  pw.Text('Rp ${paidAmount.toStringAsFixed(0)}', style: const pw.TextStyle(fontSize: 7)),
-                ],
-              ),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text('Change:', style: const pw.TextStyle(fontSize: 7)),
-                  pw.Text('Rp ${changeAmount.toStringAsFixed(0)}', style: const pw.TextStyle(fontSize: 7)),
-                ],
-              ),
+              pw.SizedBox(height: 2),
+              pw.Text('Total QTY : $totalQty', style: pw.TextStyle(font: receiptFont, fontSize: 10)),
+              pw.SizedBox(height: 4),
+              _buildReceiptRow('Sub Total', 'Rp${_formatNumber(subtotal)}', receiptFont),
+              if (discount > 0) _buildReceiptRow('Discount', '-Rp${_formatNumber(discount)}', receiptFont),
+              _buildReceiptRow('Tax', 'Rp${_formatNumber(tax)}', receiptFont),
+              pw.SizedBox(height: 2),
+              pw.Divider(thickness: 0.5, borderStyle: pw.BorderStyle.dashed),
+              pw.SizedBox(height: 2),
+              pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
+                pw.Text('Total', style: pw.TextStyle(font: receiptFont, fontSize: 13, fontWeight: pw.FontWeight.bold)),
+                pw.Text('Rp${_formatNumber(grandTotal)}', style: pw.TextStyle(font: receiptFont, fontSize: 13, fontWeight: pw.FontWeight.bold)),
+              ]),
+              pw.SizedBox(height: 2),
+              _buildReceiptRow('Bayar ($paymentMethod)', 'Rp${_formatNumber(paidAmount)}', receiptFont),
+              _buildReceiptRow('Kembali', 'Rp${_formatNumber(changeAmount)}', receiptFont),
               pw.SizedBox(height: 8),
-              pw.Center(
-                child: pw.Text(
-                  'Thank you for shopping!',
-                  style: pw.TextStyle(fontSize: 7, fontStyle: pw.FontStyle.italic),
-                ),
-              ),
+              pw.Center(child: pw.Text('Terimakasih Telah Berbelanja', style: pw.TextStyle(font: receiptFont, fontSize: 10))),
+              pw.SizedBox(height: 4),
+              pw.Center(child: pw.Text('Link Kritik dan Saran:', style: pw.TextStyle(font: receiptFont, fontSize: 9))),
+              pw.Center(child: pw.Text('kasir.com/e-receipt/S-00D39U', style: pw.TextStyle(font: receiptFont, fontSize: 9))),
+              pw.SizedBox(height: 4),
             ],
           );
         },
@@ -1421,7 +1472,261 @@ class _PosScreenState extends State<PosScreen> {
     return pdf.save();
   }
 
+
+  pw.Widget _buildReceiptRow(String label, String value, [pw.Font? font]) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 1),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Expanded(
+            child: pw.Text(label, style: pw.TextStyle(font: font, fontSize: 10), maxLines: 1),
+          ),
+          pw.Text(value, style: pw.TextStyle(font: font, fontSize: 10)),
+        ],
+      ),
+    );
+  }
+
+
+  String _formatNumber(dynamic number) {
+    final n = (number is int) ? number.toDouble() : (number as double);
+    final str = n.toStringAsFixed(0);
+    final result = StringBuffer();
+    int count = 0;
+    for (int i = str.length - 1; i >= 0; i--) {
+      if (str[i] == '-') { result.write(str[i]); break; }
+      if (count > 0 && count % 3 == 0) result.write('.');
+      result.write(str[i]);
+      count++;
+    }
+    return result.toString().split('').reversed.join('');
+  }
+
+  /// Build ESC/POS raw bytes for thermal receipt printer.
+  Uint8List _buildEscPosReceipt({
+    required List<int> logoBytes,
+    required String invoiceNo,
+    required String cashierName,
+    required double subtotal,
+    required double discount,
+    required double tax,
+    required double grandTotal,
+    required double paidAmount,
+    required double changeAmount,
+    required String paymentMethod,
+    required List<Map<String, dynamic>> items,
+  }) {
+    final bytes = <int>[];
+    
+
+
+    final dateStr = DateTime.now().toString().split('.')[0];
+    const lf = 0x0A;
+    const int colW = 32;
+
+    // Initialize printer (reset all settings)
+    bytes.addAll([0x1B, 0x40]);
+
+    // Insert logo if available
+    if (logoBytes.isNotEmpty) {
+      bytes.addAll(logoBytes);
+      bytes.addAll([0x0A]); // line feed after logo
+    }
+
+    // Format Data
+    final dateOnly = dateStr.split(' ')[0];
+    final timeOnly = dateStr.split(' ')[1];
+
+    // ---- Header: Store Name (center + bold) ----
+    if (_storeName.trim().isNotEmpty) {
+      bytes.addAll([0x1B, 0x61, 0x01]); // center
+      bytes.addAll([0x1B, 0x45, 0x01]); // bold ON
+      bytes.addAll(_encode(_storeName));
+      bytes.add(lf);
+      bytes.addAll([0x1B, 0x45, 0x00]); // bold OFF
+    }
+
+    // ---- Address (center) ----
+    bytes.addAll([0x1B, 0x61, 0x01]); // center
+    final addrLines = _storeAddress.split('\n');
+    for (var line in addrLines) {
+      if (line.trim().isNotEmpty) {
+        bytes.addAll(_encode(line));
+        bytes.add(lf);
+      }
+    }
+    bytes.addAll(_encode(_storePhone));
+    bytes.add(lf);
+    bytes.addAll(_encode(_storeNib));
+    bytes.add(lf);
+
+    // ---- Left align for body ----
+    bytes.addAll([0x1B, 0x61, 0x00]);
+    bytes.addAll(_encode('--------------------------------'));
+    bytes.add(lf);
+
+    // Info: Date/Time (left), Cashier (right)
+    bytes.addAll(_encode(_pad(dateOnly, "kasir", colW)));
+    bytes.add(lf);
+    bytes.addAll(_encode(_pad(timeOnly, cashierName, colW)));
+    bytes.add(lf);
+    bytes.add(lf);
+    bytes.addAll(_encode(invoiceNo));
+    bytes.add(lf);
+
+    bytes.addAll(_encode('--------------------------------'));
+    bytes.add(lf);
+
+    // ---- Items ----
+    int totalQty = 0;
+    for (int i = 0; i < items.length; i++) {
+      final item = items[i];
+      final name = '${item['name']}';
+      final qty = item['qty'] as int;
+      final price = item['sell_price'];
+      final total = qty * price;
+      totalQty += qty;
+
+      // Item name (bold)
+      bytes.addAll([0x1B, 0x45, 0x01]);
+      bytes.addAll(_encode('${i + 1}. $name'));
+      bytes.add(lf);
+      bytes.addAll([0x1B, 0x45, 0x00]);
+
+      // Qty x price ... subtotal (right-aligned using tab or padding)
+      final leftPart = '  $qty x ${_fmtK(price)}';
+      final rightPart = _fmtK(total);
+      bytes.addAll(_encode(_pad(leftPart, rightPart, colW)));
+      bytes.add(lf);
+    }
+
+    bytes.addAll(_encode('--------------------------------'));
+    bytes.add(lf);
+    
+    // Total QTY
+    bytes.addAll(_encode('Total QTY : $totalQty'));
+    bytes.add(lf);
+    bytes.add(lf);
+
+    // ---- Summary ----
+    bytes.addAll(_encode(_pad('Sub Total', _fmtK(subtotal), colW)));
+    bytes.add(lf);
+    if (discount > 0) {
+      bytes.addAll(_encode(_pad('Diskon', '-${_fmtK(discount)}', colW)));
+      bytes.add(lf);
+    }
+    bytes.addAll(_encode(_pad('Tax', _fmtK(tax), colW)));
+    bytes.add(lf);
+
+    // ---- TOTAL (bold) ----
+    bytes.addAll([0x1B, 0x45, 0x01]);
+    bytes.addAll(_encode(_pad('Total', _fmtK(grandTotal), colW)));
+    bytes.add(lf);
+    bytes.addAll([0x1B, 0x45, 0x00]);
+
+    // Payment info
+    bytes.addAll(_encode(_pad('Bayar ($paymentMethod)', _fmtK(paidAmount), colW)));
+    bytes.add(lf);
+    bytes.addAll(_encode(_pad('Kembali', _fmtK(changeAmount), colW)));
+    bytes.add(lf);
+    bytes.add(lf);
+
+    // ---- Footer ----
+    bytes.addAll([0x1B, 0x61, 0x01]); // center
+    bytes.addAll(_encode('Terimakasih Telah Berbelanja'));
+    bytes.add(lf);
+    bytes.add(lf);
+    bytes.addAll(_encode('Link Kritik dan Saran:'));
+    bytes.add(lf);
+    bytes.addAll(_encode('kasir.com/e-receipt/S-00D39U'));
+    bytes.add(lf);
+    bytes.add(lf);
+    bytes.add(lf);
+
+    // Partial cut
+    bytes.addAll([0x1D, 0x56, 0x01]);
+
+    return Uint8List.fromList(bytes);
+  }
+
+  List<int> _encode(String text) => text.codeUnits.map((c) => c > 127 ? 0x3F : c).toList();
+
+  String _pad(String left, String right, int w) {
+    final gap = w - left.length - right.length;
+    if (gap > 0) {
+      return '$left${' ' * gap}$right';
+    } else if (gap == 0) {
+      return '$left$right';
+    } else {
+      final maxLeft = w - right.length - 1;
+      if (maxLeft > 0 && left.length > maxLeft) {
+        return '${left.substring(0, maxLeft)} $right';
+      }
+      return '$left $right'.substring(0, w); // Force strict width
+    }
+  }
+
+  /// Compact Rp formatter for receipt (e.g. "Rp7.000")
+  String _fmtK(dynamic n) => 'Rp${_formatNumber(n)}';
+
+
+  /// Send raw bytes to Windows printer via winspool.drv API (PowerShell).
+  Future<bool> _sendRawToWindowsPrinter(String printerName, Uint8List data) async {
+    try {
+      final tempDir = await Directory.systemTemp.createTemp('receipt_');
+      final tempFile = File('${tempDir.path}\\receipt.bin');
+      await tempFile.writeAsBytes(data);
+      final escapedPath = tempFile.path.replaceAll('\\', '\\\\');
+
+      final result = await Process.run('powershell', [
+        '-NoProfile', '-Command',
+        '''
+Add-Type -TypeDefinition @"
+using System; using System.IO; using System.Runtime.InteropServices;
+public class RawPrint {
+  [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Ansi)]
+  public class DOCINFOA { [MarshalAs(UnmanagedType.LPStr)] public string pDocName; [MarshalAs(UnmanagedType.LPStr)] public string pOutputFile; [MarshalAs(UnmanagedType.LPStr)] public string pDataType; }
+  [DllImport("winspool.drv", EntryPoint="OpenPrinterA", SetLastError=true, CharSet=CharSet.Ansi)]
+  public static extern bool OpenPrinter(string p, out IntPtr hP, IntPtr pd);
+  [DllImport("winspool.drv", EntryPoint="ClosePrinter", SetLastError=true)]
+  public static extern bool ClosePrinter(IntPtr hP);
+  [DllImport("winspool.drv", EntryPoint="StartDocPrinterA", SetLastError=true, CharSet=CharSet.Ansi)]
+  public static extern bool StartDocPrinter(IntPtr hP, int l, [In, MarshalAs(UnmanagedType.LPStruct)] DOCINFOA di);
+  [DllImport("winspool.drv", EntryPoint="EndDocPrinter", SetLastError=true)]
+  public static extern bool EndDocPrinter(IntPtr hP);
+  [DllImport("winspool.drv", EntryPoint="StartPagePrinter", SetLastError=true)]
+  public static extern bool StartPagePrinter(IntPtr hP);
+  [DllImport("winspool.drv", EntryPoint="EndPagePrinter", SetLastError=true)]
+  public static extern bool EndPagePrinter(IntPtr hP);
+  [DllImport("winspool.drv", EntryPoint="WritePrinter", SetLastError=true)]
+  public static extern bool WritePrinter(IntPtr hP, IntPtr pB, int dwC, out int dwW);
+  public static bool Send(string name, byte[] b) {
+    IntPtr hP; var di = new DOCINFOA(); di.pDocName = "Receipt"; di.pDataType = "RAW";
+    if (!OpenPrinter(name, out hP, IntPtr.Zero)) return false;
+    StartDocPrinter(hP, 1, di); StartPagePrinter(hP);
+    IntPtr p = Marshal.AllocCoTaskMem(b.Length); Marshal.Copy(b, 0, p, b.Length);
+    int w; WritePrinter(hP, p, b.Length, out w); Marshal.FreeCoTaskMem(p);
+    EndPagePrinter(hP); EndDocPrinter(hP); ClosePrinter(hP); return true;
+  }
+}
+"@
+\$bytes = [System.IO.File]::ReadAllBytes("$escapedPath")
+[RawPrint]::Send("$printerName", \$bytes)
+'''
+      ]);
+
+      try { await tempDir.delete(recursive: true); } catch (_) {}
+      return result.exitCode == 0;
+    } catch (e) {
+      debugPrint('Raw printing error: \$e');
+      return false;
+    }
+  }
+
   Future<void> _printReceipt({
+    required String invoiceNo,
+    required String cashierName,
     required double subtotal,
     required double discount,
     required double tax,
@@ -1434,16 +1739,82 @@ class _PosScreenState extends State<PosScreen> {
     try {
       final settings = await DatabaseHelper.instance.getSettings();
       final defaultPrinterName = settings['default_printer'];
-      
+
+      // Try ESC/POS raw printing for thermal printers on Windows
+      if (defaultPrinterName != null && defaultPrinterName.isNotEmpty && Platform.isWindows) {
+        // Load logo for ESC/POS
+        List<int> escLogo = [];
+        try {
+          final bd = await rootBundle.load('assets/logo/Minimalist Red Shopping Cart Logo.png');
+          final image = img.decodeImage(bd.buffer.asUint8List());
+          if (image != null) {
+            final resized = img.copyResize(image, width: 350);
+            final wBytes = (resized.width + 7) ~/ 8;
+            
+            int minY = resized.height;
+            int maxY = -1;
+            for (int y = 0; y < resized.height; y++) {
+              bool hasBlack = false;
+              for (int x = 0; x < resized.width; x++) {
+                final p = resized.getPixel(x, y);
+                if (p.a > 127 && (p.r * 0.299 + p.g * 0.587 + p.b * 0.114) < 128) {
+                  hasBlack = true;
+                  break;
+                }
+              }
+              if (hasBlack) {
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+              }
+            }
+            
+            if (maxY >= minY) {
+              final h = maxY - minY + 1;
+              escLogo.addAll([0x1B, 0x61, 0x01]); // Center
+              escLogo.addAll([0x1D, 0x76, 0x30, 0x00, wBytes % 256, wBytes ~/ 256, h % 256, h ~/ 256]);
+              for (int y = minY; y <= maxY; y++) {
+                for (int xb = 0; xb < wBytes; xb++) {
+                  int b = 0;
+                  for (int bit = 0; bit < 8; bit++) {
+                    int x = xb * 8 + bit;
+                    if (x < resized.width) {
+                      final p = resized.getPixel(x, y);
+                      if (p.a > 127) {
+                        if ((p.r * 0.299 + p.g * 0.587 + p.b * 0.114) < 128) {
+                          b |= (1 << (7 - bit));
+                        }
+                      }
+                    }
+                  }
+                  escLogo.add(b);
+                }
+              }
+            }
+          }
+        } catch (_) {}
+
+        final escBytes = _buildEscPosReceipt(
+          logoBytes: escLogo,
+          invoiceNo: invoiceNo,
+          cashierName: cashierName,
+          subtotal: subtotal, discount: discount, tax: tax,
+          grandTotal: grandTotal, paidAmount: paidAmount,
+          changeAmount: changeAmount, paymentMethod: paymentMethod,
+          items: items,
+        );
+        final success = await _sendRawToWindowsPrinter(defaultPrinterName, escBytes);
+        if (success) return;
+        debugPrint('Raw ESC/POS failed, falling back to PDF...');
+      }
+
+      // Fallback: PDF printing
       final pdfBytes = await _generateReceiptPdf(
         PdfPageFormat.roll57,
-        subtotal: subtotal,
-        discount: discount,
-        tax: tax,
-        grandTotal: grandTotal,
-        paidAmount: paidAmount,
-        changeAmount: changeAmount,
-        paymentMethod: paymentMethod,
+        invoiceNo: invoiceNo,
+        cashierName: cashierName,
+        subtotal: subtotal, discount: discount, tax: tax,
+        grandTotal: grandTotal, paidAmount: paidAmount,
+        changeAmount: changeAmount, paymentMethod: paymentMethod,
         items: items,
       );
 
@@ -1469,6 +1840,8 @@ class _PosScreenState extends State<PosScreen> {
   }
 
   void _showReceiptDialog({
+    required String invoiceNo,
+    required String cashierName,
     required double subtotal,
     required double discount,
     required double tax,
@@ -1529,6 +1902,8 @@ class _PosScreenState extends State<PosScreen> {
             onPressed: () async {
               Navigator.pop(ctx);
               await _printReceipt(
+                invoiceNo: invoiceNo,
+                cashierName: cashierName,
                 subtotal: subtotal,
                 discount: discount,
                 tax: tax,
@@ -1585,7 +1960,7 @@ class _PosScreenState extends State<PosScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withOpacity(0.1) : Colors.white,
+          color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : Colors.white,
           border: Border.all(
             color: isSelected ? AppColors.primary : Colors.grey.shade300,
           ),

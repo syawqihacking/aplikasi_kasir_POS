@@ -61,7 +61,7 @@ class _StockHistoryTabState extends State<StockHistoryTab> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))
                 ],
               ),
               child: _history.isEmpty
@@ -86,7 +86,7 @@ class _StockHistoryTabState extends State<StockHistoryTab> {
                           leading: Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: isOut ? AppColors.danger.withOpacity(0.1) : AppColors.success.withOpacity(0.1),
+                              color: isOut ? AppColors.danger.withValues(alpha: 0.1) : AppColors.success.withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -104,7 +104,7 @@ class _StockHistoryTabState extends State<StockHistoryTab> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: isOut ? AppColors.danger.withOpacity(0.1) : AppColors.success.withOpacity(0.1),
+                                  color: isOut ? AppColors.danger.withValues(alpha: 0.1) : AppColors.success.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(

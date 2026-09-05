@@ -75,6 +75,7 @@ class _CloseShiftDialogState extends State<CloseShiftDialog> {
   }
 
   Future<void> _submitCloseShift() async {
+    if (_isClosing) return;
     if (!_formKey.currentState!.validate()) return;
 
     final diff = _difference;
@@ -197,7 +198,7 @@ class _CloseShiftDialogState extends State<CloseShiftDialog> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE53935).withOpacity(0.12),
+                        color: const Color(0xFFE53935).withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: const Icon(
@@ -230,7 +231,11 @@ class _CloseShiftDialogState extends State<CloseShiftDialog> {
                       ),
                     ),
                     IconButton(
-                      onPressed: () => Navigator.pop(context, false),
+                      onPressed: () {
+                        if (ModalRoute.of(context)?.isCurrent == true) {
+                          Navigator.pop(context, false);
+                        }
+                      },
                       icon: const Icon(Icons.close, color: AppColors.textLight),
                     )
                   ],
@@ -346,9 +351,9 @@ class _CloseShiftDialogState extends State<CloseShiftDialog> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
-                    color: diffColor.withOpacity(0.1),
+                    color: diffColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: diffColor.withOpacity(0.3)),
+                    border: Border.all(color: diffColor.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
@@ -402,7 +407,11 @@ class _CloseShiftDialogState extends State<CloseShiftDialog> {
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: _isClosing ? null : () => Navigator.pop(context, false),
+                        onPressed: _isClosing ? null : () {
+                          if (ModalRoute.of(context)?.isCurrent == true) {
+                            Navigator.pop(context, false);
+                          }
+                        },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),

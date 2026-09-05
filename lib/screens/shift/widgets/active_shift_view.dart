@@ -7,7 +7,6 @@ import '../../../services/shift_service.dart';
 import '../../../models/shift.dart';
 import '../dialogs/cash_movement_dialog.dart';
 import '../dialogs/close_shift_dialog.dart';
-import '../dialogs/shift_receipt_dialog.dart';
 
 class ActiveShiftView extends StatefulWidget {
   final CashShift shift;
@@ -117,7 +116,7 @@ class _ActiveShiftViewState extends State<ActiveShiftView> with SingleTickerProv
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF6C2FE2).withOpacity(0.35),
+                  color: const Color(0xFF6C2FE2).withValues(alpha: 0.35),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -128,7 +127,7 @@ class _ActiveShiftViewState extends State<ActiveShiftView> with SingleTickerProv
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: const Icon(Icons.timer_outlined, color: Colors.white, size: 36),
@@ -195,9 +194,9 @@ class _ActiveShiftViewState extends State<ActiveShiftView> with SingleTickerProv
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withOpacity(0.2)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
                   ),
                   child: Column(
                     children: [
@@ -382,7 +381,7 @@ class _ActiveShiftViewState extends State<ActiveShiftView> with SingleTickerProv
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
+                  color: Colors.black.withValues(alpha: 0.03),
                   blurRadius: 16,
                   offset: const Offset(0, 4),
                 ),
@@ -436,14 +435,14 @@ class _ActiveShiftViewState extends State<ActiveShiftView> with SingleTickerProv
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: isHighlight ? color.withOpacity(0.08) : Colors.white,
+        color: isHighlight ? color.withValues(alpha: 0.08) : Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: isHighlight ? color.withOpacity(0.3) : Colors.grey.shade200,
+          color: isHighlight ? color.withValues(alpha: 0.3) : Colors.grey.shade200,
           width: isHighlight ? 1.5 : 1,
         ),
         boxShadow: isHighlight
-            ? [BoxShadow(color: color.withOpacity(0.12), blurRadius: 12, offset: const Offset(0, 4))]
+            ? [BoxShadow(color: color.withValues(alpha: 0.12), blurRadius: 12, offset: const Offset(0, 4))]
             : null,
       ),
       child: Column(
@@ -464,7 +463,7 @@ class _ActiveShiftViewState extends State<ActiveShiftView> with SingleTickerProv
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
+                  color: color.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(icon, size: 18, color: color),
@@ -535,7 +534,7 @@ class _ActiveShiftViewState extends State<ActiveShiftView> with SingleTickerProv
           leading: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: isIN ? AppColors.success.withOpacity(0.12) : const Color(0xFFE53935).withOpacity(0.12),
+              color: isIN ? AppColors.success.withValues(alpha: 0.12) : const Color(0xFFE53935).withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
@@ -596,7 +595,7 @@ class _ActiveShiftViewState extends State<ActiveShiftView> with SingleTickerProv
           leading: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(Icons.receipt_outlined, color: AppColors.primary, size: 18),

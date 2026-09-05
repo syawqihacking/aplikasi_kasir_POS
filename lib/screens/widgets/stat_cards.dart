@@ -157,8 +157,8 @@ class _StatCardsGridState extends State<StatCardsGrid> {
       iconBgColor = Colors.white;
       iconColor = AppColors.primary;
     } else if (isDanger) {
-      bgColor = AppColors.danger.withOpacity(0.1);
-      iconBgColor = AppColors.danger.withOpacity(0.2);
+      bgColor = AppColors.danger.withValues(alpha: 0.1);
+      iconBgColor = AppColors.danger.withValues(alpha: 0.2);
       iconColor = AppColors.danger;
       textColor = AppColors.danger;
     }
@@ -171,7 +171,7 @@ class _StatCardsGridState extends State<StatCardsGrid> {
         boxShadow: isPrimary
             ? [
                 BoxShadow(
-                  color: AppColors.primary.withOpacity(0.3),
+                  color: AppColors.primary.withValues(alpha: 0.3),
                   blurRadius: 15,
                   offset: const Offset(0, 10),
                 )

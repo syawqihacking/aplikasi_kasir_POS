@@ -205,7 +205,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                   leading: Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: AppColors.primary.withOpacity(0.1),
+                                      color: AppColors.primary.withValues(alpha: 0.1),
                                       shape: BoxShape.circle,
                                     ),
                                     child: const Icon(
@@ -303,7 +303,7 @@ _currencyFormat.format(t['grand_total']),
           style: OutlinedButton.styleFrom(
             backgroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            side: BorderSide(color: AppColors.primary.withOpacity(0.4)),
+            side: BorderSide(color: AppColors.primary.withValues(alpha: 0.4)),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
@@ -330,11 +330,11 @@ _currencyFormat.format(t['grand_total']),
     return Tooltip(
       message: 'View items',
       child: Material(
-        color: AppColors.primary.withOpacity(0.08),
+        color: AppColors.primary.withValues(alpha: 0.08),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
-          hoverColor: AppColors.primary.withOpacity(0.15),
+          hoverColor: AppColors.primary.withValues(alpha: 0.15),
           onTap: () => _showTransactionItems(t),
           child: const Padding(
             padding: EdgeInsets.all(3),
@@ -416,7 +416,7 @@ _currencyFormat.format(t['grand_total']),
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: const Icon(

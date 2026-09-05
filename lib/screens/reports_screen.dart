@@ -248,7 +248,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                   )
@@ -295,7 +295,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
         Expanded(
           child: SingleChildScrollView(
             child: DataTable(
-              headingRowColor: WidgetStateProperty.all(AppColors.background.withOpacity(0.5)),
+              headingRowColor: WidgetStateProperty.all(AppColors.background.withValues(alpha: 0.5)),
               dataRowMinHeight: 60,
               dataRowMaxHeight: 60,
               horizontalMargin: 24,
@@ -337,11 +337,11 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
     return Tooltip(
       message: 'View items',
       child: Material(
-        color: AppColors.primary.withOpacity(0.08),
+        color: AppColors.primary.withValues(alpha: 0.08),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
-          hoverColor: AppColors.primary.withOpacity(0.15),
+          hoverColor: AppColors.primary.withValues(alpha: 0.15),
           onTap: () => _showTransactionItems(t),
           child: const Padding(
             padding: EdgeInsets.all(3),
@@ -423,7 +423,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: const Icon(
@@ -708,7 +708,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
         Expanded(
           child: SingleChildScrollView(
             child: DataTable(
-              headingRowColor: WidgetStateProperty.all(AppColors.background.withOpacity(0.5)),
+              headingRowColor: WidgetStateProperty.all(AppColors.background.withValues(alpha: 0.5)),
               dataRowMinHeight: 60,
               dataRowMaxHeight: 60,
               horizontalMargin: 24,
@@ -742,7 +742,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
   Widget _buildTopItemsTab() {
     return SingleChildScrollView(
       child: DataTable(
-              headingRowColor: WidgetStateProperty.all(AppColors.background.withOpacity(0.5)),
+              headingRowColor: WidgetStateProperty.all(AppColors.background.withValues(alpha: 0.5)),
               dataRowMinHeight: 60,
               dataRowMaxHeight: 60,
               horizontalMargin: 24,
@@ -773,7 +773,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
   Widget _buildInventoryTab() {
     return SingleChildScrollView(
       child: DataTable(
-              headingRowColor: WidgetStateProperty.all(AppColors.background.withOpacity(0.5)),
+              headingRowColor: WidgetStateProperty.all(AppColors.background.withValues(alpha: 0.5)),
               dataRowMinHeight: 60,
               dataRowMaxHeight: 60,
               horizontalMargin: 24,
@@ -855,7 +855,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
         Expanded(
           child: SingleChildScrollView(
             child: DataTable(
-              headingRowColor: WidgetStateProperty.all(AppColors.background.withOpacity(0.5)),
+              headingRowColor: WidgetStateProperty.all(AppColors.background.withValues(alpha: 0.5)),
               dataRowMinHeight: 60,
               dataRowMaxHeight: 60,
               horizontalMargin: 24,
@@ -887,7 +887,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
   Widget _buildShiftTab() {
     return SingleChildScrollView(
       child: DataTable(
-              headingRowColor: WidgetStateProperty.all(AppColors.background.withOpacity(0.5)),
+              headingRowColor: WidgetStateProperty.all(AppColors.background.withValues(alpha: 0.5)),
               dataRowMinHeight: 60,
               dataRowMaxHeight: 60,
               horizontalMargin: 24,

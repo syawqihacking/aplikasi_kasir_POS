@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
@@ -126,7 +127,7 @@ class DatabaseHelper {
         await logActivity('MAINTENANCE', 'system', 'Performed weekly database vacuum and backup');
       }
     } catch (e) {
-      print('Maintenance error: $e');
+      debugPrint('Maintenance error: $e');
     }
   }
 
@@ -1236,7 +1237,7 @@ class DatabaseHelper {
   }
 
   // --- Transactions ---
-  Future<void> saveTransaction({
+  Future<String> saveTransaction({
     required double subtotal,
     required double tax,
     required double grandTotal,
@@ -1244,28 +1245,13 @@ class DatabaseHelper {
     required double changeAmount,
     required String paymentMethod,
     required List<Map<String, dynamic>> cartItems,
-    int? cashierId,
-    int? shiftId,
   }) async {
     final db = await instance.database;
-
-    int resolvedCashierId = cashierId ?? 1;
-    int resolvedShiftId = shiftId ?? 0;
-
-    if (resolvedShiftId == 0) {
-      final active = await getActiveShift();
-      if (active != null) {
-        resolvedShiftId = (active['id'] as num).toInt();
-        if (cashierId == null && active['cashier_id'] != null) {
-          resolvedCashierId = (active['cashier_id'] as num).toInt();
-        }
-      }
-    }
+    final invoiceNo = 'INV-${DateTime.now().millisecondsSinceEpoch}';
     
     // Start a transaction block to ensure atomic operations
     await db.transaction((txn) async {
       // 1. Insert Transaction Header
-      final invoiceNo = 'INV-${DateTime.now().millisecondsSinceEpoch}';
       final transactionId = await txn.insert('transactions', {
         'invoice_no': invoiceNo,
         'subtotal': subtotal,
@@ -1274,8 +1260,7 @@ class DatabaseHelper {
         'paid_amount': paidAmount,
         'change_amount': changeAmount,
         'payment_method': paymentMethod,
-        'cashier_id': resolvedCashierId,
-        'shift_id': resolvedShiftId,
+        'cashier_id': 1, // Default user
         'created_at': DateTime.now().toIso8601String(),
       });
 
@@ -1303,7 +1288,8 @@ class DatabaseHelper {
     });
 
     // Trigger sync in background
-    SupabaseSyncService().syncUnsyncedData().catchError((e) => print('Sync error: $e'));
+    SupabaseSyncService().syncUnsyncedData().catchError((e) => debugPrint('Sync error: $e'));
+    return invoiceNo;
   }
 
   Future<List<Map<String, dynamic>>> getTransactions({DateTime? startDate, DateTime? endDate}) async {
@@ -1497,7 +1483,7 @@ class DatabaseHelper {
     final typeLabel = type.toUpperCase() == 'IN' ? 'Cash In (Pemasukan)' : 'Cash Out (Pengeluaran)';
     await logActivity('CASH_MOVEMENT', 'shift', '$typeLabel Rp ${amount.toStringAsFixed(0)} - $reason', userId: userId);
     // Trigger sync in background
-    SupabaseSyncService().syncUnsyncedData().catchError((e) => print('Sync error: $e'));
+    SupabaseSyncService().syncUnsyncedData().catchError((e) => debugPrint('Sync error: $e'));
     return id;
   }
 
@@ -1517,7 +1503,7 @@ class DatabaseHelper {
       'created_at': DateTime.now().toIso8601String(),
     });
     // Trigger sync in background
-    SupabaseSyncService().syncUnsyncedData().catchError((e) => print('Sync error: $e'));
+    SupabaseSyncService().syncUnsyncedData().catchError((e) => debugPrint('Sync error: $e'));
   }
 
   Future<List<Map<String, dynamic>>> getAllCashMovements({String? startDate, String? endDate}) async {
@@ -1605,7 +1591,7 @@ class DatabaseHelper {
     user['password_hash'] = hashPassword(user['password_hash']);
     user['created_at'] = DateTime.now().toIso8601String();
     final id = await db.insert('users', user);
-    SupabaseSyncService().syncUnsyncedData().catchError((e) => print('Sync error: $e'));
+    SupabaseSyncService().syncUnsyncedData().catchError((e) => debugPrint('Sync error: $e'));
     return id;
   }
 
@@ -1616,14 +1602,14 @@ class DatabaseHelper {
     }
     user['synced'] = 0;
     final result = await db.update('users', user, where: 'id = ?', whereArgs: [id]);
-    SupabaseSyncService().syncUnsyncedData().catchError((e) => print('Sync error: $e'));
+    SupabaseSyncService().syncUnsyncedData().catchError((e) => debugPrint('Sync error: $e'));
     return result;
   }
 
   Future<int> toggleUserActive(int id, bool isActive) async {
     final db = await instance.database;
     final result = await db.update('users', {'is_active': isActive ? 1 : 0, 'synced': 0}, where: 'id = ?', whereArgs: [id]);
-    SupabaseSyncService().syncUnsyncedData().catchError((e) => print('Sync error: $e'));
+    SupabaseSyncService().syncUnsyncedData().catchError((e) => debugPrint('Sync error: $e'));
     return result;
   }
 

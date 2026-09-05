@@ -312,7 +312,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
                                     tooltip: 'Auto Generate Barcode',
                                     onPressed: _generateBarcode,
                                     style: IconButton.styleFrom(
-                                      backgroundColor: AppColors.primary.withOpacity(0.1),
+                                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                     ),
                                   ),
@@ -347,9 +347,9 @@ class _AddProductDialogState extends State<AddProductDialog> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppColors.warning.withOpacity(0.1),
+                            color: AppColors.warning.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: AppColors.warning.withOpacity(0.4)),
+                            border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
                           ),
                           child: Row(
                             children: [

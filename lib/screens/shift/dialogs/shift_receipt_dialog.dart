@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
@@ -78,6 +79,13 @@ class _ShiftReceiptDialogState extends State<ShiftReceiptDialog> {
 
   Future<Uint8List> _generateShiftPdf(PdfPageFormat format) async {
     final pdf = pw.Document();
+    
+    Uint8List? logoBytes;
+    try {
+      final byteData = await rootBundle.load('assets/logo/Minimalist Red Shopping Cart Logo.png');
+      logoBytes = byteData.buffer.asUint8List();
+    } catch (_) {}
+    
     final openedAt = DateTime.tryParse(widget.shift.openedAt);
     final closedAt = widget.shift.closedAt != null ? DateTime.tryParse(widget.shift.closedAt!) : null;
 
@@ -93,6 +101,15 @@ class _ShiftReceiptDialogState extends State<ShiftReceiptDialog> {
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               // Store Header
+              if (logoBytes != null) ...[
+                pw.Center(
+                  child: pw.Image(
+                    pw.MemoryImage(logoBytes),
+                    width: 120,
+                  ),
+                ),
+                pw.SizedBox(height: 8),
+              ],
               pw.Center(
                 child: pw.Text(
                   _storeName,
@@ -219,7 +236,7 @@ class _ShiftReceiptDialogState extends State<ShiftReceiptDialog> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
+                        color: AppColors.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(Icons.receipt_long_rounded, color: AppColors.primary),

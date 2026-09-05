@@ -86,13 +86,13 @@ class _HeaderState extends State<Header> {
                         Color bgColor;
                         if (notif.type == 'danger') {
                           iconColor = AppColors.danger;
-                          bgColor = AppColors.danger.withOpacity(0.1);
+                          bgColor = AppColors.danger.withValues(alpha: 0.1);
                         } else if (notif.type == 'warning') {
                           iconColor = AppColors.warning;
-                          bgColor = AppColors.warning.withOpacity(0.1);
+                          bgColor = AppColors.warning.withValues(alpha: 0.1);
                         } else {
                           iconColor = AppColors.primary;
-                          bgColor = AppColors.primary.withOpacity(0.1);
+                          bgColor = AppColors.primary.withValues(alpha: 0.1);
                         }
 
                         return ListTile(
