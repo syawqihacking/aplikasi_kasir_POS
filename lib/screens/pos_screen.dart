@@ -13,6 +13,7 @@ import '../database/database_helper.dart';
 import '../services/scanner_service.dart';
 import '../services/cart_service.dart';
 import '../services/shift_service.dart';
+import '../services/bluetooth_printer_service.dart';
 import '../models/shift.dart';
 import '../main.dart';
 import 'shift/widgets/open_shift_card.dart';
@@ -43,6 +44,7 @@ class _PosScreenState extends State<PosScreen> {
   
   bool _isLoadingShift = true;
   bool _isShiftOpened = false;
+  bool _showCartOnMobile = false;
 
   @override
   void initState() {
@@ -337,55 +339,116 @@ class _PosScreenState extends State<PosScreen> {
         }
         return KeyEventResult.ignored;
       },
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-          // Left side: Product Catalog
-          Expanded(
-            flex: 13,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ValueListenableBuilder<CashShift?>(
-                  valueListenable: ShiftService.instance.activeShiftNotifier,
-                  builder: (context, activeShift, _) {
-                    if (activeShift != null) {
-                      return _buildShiftBar(activeShift);
-                    }
-                    return const SizedBox.shrink();
-                  },
-                ),
-                _buildSearchBar(),
-                const SizedBox(height: 16),
-                Text('Fast Items / Terlaris', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: AppColors.textLight)),
-                const SizedBox(height: 8),
-                _buildFastButtons(),
-                const SizedBox(height: 16),
-                _buildCategories(),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: GridView.builder(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      childAspectRatio: 0.8,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                    ),
-                    itemCount: _catalogProducts.length,
-                    itemBuilder: (context, index) {
-                      return _buildProductCard(_catalogProducts[index]);
-                    },
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isPhoneScreen = constraints.maxWidth < 600;
+          final isTabletScreen = constraints.maxWidth >= 600 && constraints.maxWidth < 900;
+          final gap = isPhoneScreen ? 12.0 : 24.0;
+
+          return Padding(
+            padding: EdgeInsets.all(isPhoneScreen ? 8 : 24),
+            child: isPhoneScreen
+                ? _buildPhonePosLayout()
+                : Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Left side: Product Catalog
+                      Expanded(
+                        flex: isTabletScreen ? 12 : 13,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ValueListenableBuilder<CashShift?>(
+                              valueListenable: ShiftService.instance.activeShiftNotifier,
+                              builder: (context, activeShift, _) {
+                                if (activeShift != null) {
+                                  return _buildShiftBar(activeShift);
+                                }
+                                return const SizedBox.shrink();
+                              },
+                            ),
+                            _buildSearchBar(),
+                            const SizedBox(height: 16),
+                            Text('Fast Items / Terlaris', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: AppColors.textLight)),
+                            const SizedBox(height: 8),
+                            _buildFastButtons(),
+                            const SizedBox(height: 16),
+                            _buildCategories(),
+                            const SizedBox(height: 16),
+                            Expanded(
+                              child: GridView.builder(
+                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: isTabletScreen ? 2 : 3,
+                                  childAspectRatio: 0.8,
+                                  crossAxisSpacing: 16,
+                                  mainAxisSpacing: 16,
+                                ),
+                                itemCount: _catalogProducts.length,
+                                itemBuilder: (context, index) {
+                                  return _buildProductCard(_catalogProducts[index]);
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: gap),
+                      // Right side: Shopping Cart
+                      Expanded(
+                        flex: isTabletScreen ? 8 : 7,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Column(
+                            children: [
+                              _buildCartHeader(),
+                              Expanded(
+                                child: _cart.items.isEmpty
+                                  ? Center(
+                                      child: Text(
+                                        'Cart is empty.\nScan or add products.',
+                                        textAlign: TextAlign.center,
+                                        style: GoogleFonts.outfit(color: AppColors.textLight),
+                                      ),
+                                    )
+                                  : ListView.builder(
+                                      itemCount: _cart.items.length,
+                                      itemBuilder: (context, index) {
+                                        return _buildCartItem(index, _cart.items[index]);
+                                      },
+                                    ),
+                              ),
+                              _buildCartSummary(),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 24),
-          // Right side: Shopping Cart
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildPhonePosLayout() {
+    return Column(
+      children: [
+        // Shift bar at top
+        ValueListenableBuilder<CashShift?>(
+          valueListenable: ShiftService.instance.activeShiftNotifier,
+          builder: (context, activeShift, _) {
+            if (activeShift != null) {
+              return _buildShiftBar(activeShift);
+            }
+            return const SizedBox.shrink();
+          },
+        ),
+        if (_showCartOnMobile) ...[
+          // Cart view on mobile
           Expanded(
-            flex: 7,
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -415,11 +478,142 @@ class _PosScreenState extends State<PosScreen> {
               ),
             ),
           ),
+        ] else ...[
+          // Catalog view on mobile
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSearchBar(),
+                const SizedBox(height: 12),
+                Text('Fast Items / Terlaris', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: AppColors.textLight)),
+                const SizedBox(height: 8),
+                _buildFastButtons(),
+                const SizedBox(height: 12),
+                _buildCategories(),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: GridView.builder(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 0.8,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                    ),
+                    itemCount: _catalogProducts.length,
+                    itemBuilder: (context, index) {
+                      return _buildProductCard(_catalogProducts[index]);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
-      ),
-    ),
-  );
-}
+        // Bottom toggle bar
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -2),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            top: false,
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _showCartOnMobile = false),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: !_showCartOnMobile ? AppColors.primary : Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.inventory_2,
+                            color: !_showCartOnMobile ? Colors.white : AppColors.textDark,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Products',
+                            style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.bold,
+                              color: !_showCartOnMobile ? Colors.white : AppColors.textDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _showCartOnMobile = true),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: _showCartOnMobile ? AppColors.primary : Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.shopping_cart,
+                            color: _showCartOnMobile ? Colors.white : AppColors.textDark,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Cart (${_cart.items.length})',
+                            style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.bold,
+                              color: _showCartOnMobile ? Colors.white : AppColors.textDark,
+                            ),
+                          ),
+                          if (_cart.items.isNotEmpty) ...[
+                            const SizedBox(width: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.danger,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '${_cart.items.length}',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget _buildSearchBar() {
     return Container(
@@ -859,6 +1053,42 @@ class _PosScreenState extends State<PosScreen> {
             ],
           ),
           const SizedBox(height: 20),
+          // Bluetooth printer connection (mobile)
+          ValueListenableBuilder<bool>(
+            valueListenable: BluetoothPrinterService.instance.isConnectedNotifier,
+            builder: (context, isBtConnected, _) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => BluetoothPrinterPicker.show(context),
+                    icon: Icon(
+                      isBtConnected ? Icons.bluetooth_connected : Icons.bluetooth_disabled,
+                      size: 18,
+                      color: isBtConnected ? Colors.blue : Colors.grey,
+                    ),
+                    label: Text(
+                      isBtConnected
+                          ? 'Printer: ${BluetoothPrinterService.instance.connectedName ?? "BT"}'
+                          : 'Printer Bluetooth',
+                      style: GoogleFonts.outfit(fontSize: 12),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: isBtConnected ? Colors.blue : Colors.grey,
+                      side: BorderSide(
+                        color: isBtConnected ? Colors.blue : Colors.grey.shade300,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
           SizedBox(
             width: double.infinity,
             height: 50,
@@ -1807,6 +2037,68 @@ public class RawPrint {
         debugPrint('Raw ESC/POS failed, falling back to PDF...');
       }
 
+      // Try Bluetooth printer on mobile (Android)
+      if (!Platform.isWindows && !Platform.isLinux && !Platform.isMacOS) {
+        final btService = BluetoothPrinterService.instance;
+        if (btService.isConnectedNotifier.value) {
+          // Load logo for ESC/POS
+          List<int> escLogo = [];
+          try {
+            final bd = await rootBundle.load('assets/logo/Minimalist Red Shopping Cart Logo.png');
+            final image = img.decodeImage(bd.buffer.asUint8List());
+            if (image != null) {
+              final resized = img.copyResize(image, width: 350);
+              final wBytes = (resized.width + 7) ~/ 8;
+              int minY = resized.height;
+              int maxY = -1;
+              for (int y = 0; y < resized.height; y++) {
+                bool hasBlack = false;
+                for (int x = 0; x < resized.width; x++) {
+                  final p = resized.getPixel(x, y);
+                  if (p.a > 127 && (p.r * 0.299 + p.g * 0.587 + p.b * 0.114) < 128) {
+                    hasBlack = true; break;
+                  }
+                }
+                if (hasBlack) { if (y < minY) minY = y; if (y > maxY) maxY = y; }
+              }
+              if (maxY >= minY) {
+                final h = maxY - minY + 1;
+                escLogo.addAll([0x1B, 0x61, 0x01]);
+                escLogo.addAll([0x1D, 0x76, 0x30, 0x00, wBytes % 256, wBytes ~/ 256, h % 256, h ~/ 256]);
+                for (int y = minY; y <= maxY; y++) {
+                  for (int xb = 0; xb < wBytes; xb++) {
+                    int b = 0;
+                    for (int bit = 0; bit < 8; bit++) {
+                      int x = xb * 8 + bit;
+                      if (x < resized.width) {
+                        final p = resized.getPixel(x, y);
+                        if (p.a > 127 && (p.r * 0.299 + p.g * 0.587 + p.b * 0.114) < 128) {
+                          b |= (1 << (7 - bit));
+                        }
+                      }
+                    }
+                    escLogo.add(b);
+                  }
+                }
+              }
+            }
+          } catch (_) {}
+
+          final escBytes = _buildEscPosReceipt(
+            logoBytes: escLogo,
+            invoiceNo: invoiceNo,
+            cashierName: cashierName,
+            subtotal: subtotal, discount: discount, tax: tax,
+            grandTotal: grandTotal, paidAmount: paidAmount,
+            changeAmount: changeAmount, paymentMethod: paymentMethod,
+            items: items,
+          );
+          final btSuccess = await btService.sendBytes(escBytes);
+          if (btSuccess) return;
+          debugPrint('Bluetooth print failed, falling back to PDF...');
+        }
+      }
+
       // Fallback: PDF printing
       final pdfBytes = await _generateReceiptPdf(
         PdfPageFormat.roll57,
@@ -1898,6 +2190,27 @@ public class RawPrint {
           ),
         ),
         actions: [
+          // Bluetooth printer button (mobile)
+          ValueListenableBuilder<bool>(
+            valueListenable: BluetoothPrinterService.instance.isConnectedNotifier,
+            builder: (context, isBtConnected, _) {
+              return IconButton(
+                onPressed: () async {
+                  final addr = await BluetoothPrinterPicker.show(context);
+                  if (addr != null && ctx.mounted) {
+                    Navigator.pop(ctx);
+                  }
+                },
+                icon: Icon(
+                  isBtConnected ? Icons.bluetooth_connected : Icons.bluetooth,
+                  color: isBtConnected ? Colors.blue : Colors.grey,
+                ),
+                tooltip: isBtConnected
+                    ? 'Terhubung: ${BluetoothPrinterService.instance.connectedName ?? "Printer"}'
+                    : 'Hubungkan Printer Bluetooth',
+              );
+            },
+          ),
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);

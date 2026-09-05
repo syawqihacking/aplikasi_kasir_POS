@@ -3,6 +3,7 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  flutter_classic_bluetooth
   gtk
   printing
   url_launcher_linux

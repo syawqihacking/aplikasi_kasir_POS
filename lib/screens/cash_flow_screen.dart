@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../theme/app_colors.dart';
 import '../database/database_helper.dart';
 import '../services/auth_service.dart';
+import '../utils/responsive_utils.dart';
 
 class CashFlowScreen extends StatefulWidget {
   const CashFlowScreen({super.key});
@@ -283,10 +284,31 @@ class _CashFlowScreenState extends State<CashFlowScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isPhoneScreen = isPhone(context);
     return Scaffold(
       backgroundColor: AppColors.background,
+      floatingActionButton: isPhoneScreen
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FloatingActionButton.small(
+                  heroTag: 'cash_in',
+                  backgroundColor: AppColors.success,
+                  onPressed: () => _showAddDialog(initialType: 'IN'),
+                  child: const Icon(Icons.add_circle_outline, color: Colors.white),
+                ),
+                const SizedBox(height: 12),
+                FloatingActionButton.small(
+                  heroTag: 'cash_out',
+                  backgroundColor: AppColors.danger,
+                  onPressed: () => _showAddDialog(initialType: 'OUT'),
+                  child: const Icon(Icons.remove_circle_outline, color: Colors.white),
+                ),
+              ],
+            )
+          : null,
       body: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: responsivePadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -300,84 +322,78 @@ class _CashFlowScreenState extends State<CashFlowScreen> {
                     Text(
                       'Arus Kas (Pemasukan & Pengeluaran)',
                       style: GoogleFonts.outfit(
-                        fontSize: 28,
+                        fontSize: responsiveFontSize(context, desktop: 28, tablet: 24, phone: 20),
                         fontWeight: FontWeight.bold,
                         color: AppColors.textDark,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Kelola catatan uang masuk dan keluar non-transaksi tanpa sistem shift',
-                      style: GoogleFonts.outfit(
-                        fontSize: 14,
-                        color: AppColors.textLight,
+                    if (!isPhoneScreen) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Kelola catatan uang masuk dan keluar non-transaksi tanpa sistem shift',
+                        style: GoogleFonts.outfit(
+                          fontSize: 14,
+                          color: AppColors.textLight,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
-                Row(
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: () => _showAddDialog(initialType: 'IN'),
-                      icon: const Icon(Icons.add_circle_outline, size: 20, color: Colors.white),
-                      label: Text('Catat Pemasukan', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.success,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
+                  if (!isPhoneScreen)
+                    Row(
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: () => _showAddDialog(initialType: 'IN'),
+                          icon: const Icon(Icons.add_circle_outline, size: 20, color: Colors.white),
+                          label: Text('Catat Pemasukan', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.success,
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        ElevatedButton.icon(
+                          onPressed: () => _showAddDialog(initialType: 'OUT'),
+                          icon: const Icon(Icons.remove_circle_outline, size: 20, color: Colors.white),
+                          label: Text('Catat Pengeluaran', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.danger,
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    ElevatedButton.icon(
-                      onPressed: () => _showAddDialog(initialType: 'OUT'),
-                      icon: const Icon(Icons.remove_circle_outline, size: 20, color: Colors.white),
-                      label: Text('Catat Pengeluaran', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.danger,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                  ],
-                ),
               ],
             ),
             const SizedBox(height: 24),
 
             // Stat Cards
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    title: 'Total Pemasukan',
-                    amount: _currencyFormat.format(_totalIn),
-                    icon: Icons.arrow_downward_rounded,
-                    color: AppColors.success,
-                    subtitle: 'Uang masuk non-penjualan',
+            if (isPhoneScreen)
+              Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(child: _buildStatCard(title: 'Total Pemasukan', amount: _currencyFormat.format(_totalIn), icon: Icons.arrow_downward_rounded, color: AppColors.success, subtitle: 'Uang masuk non-penjualan')),
+                      const SizedBox(width: 12),
+                      Expanded(child: _buildStatCard(title: 'Total Pengeluaran', amount: _currencyFormat.format(_totalOut), icon: Icons.arrow_upward_rounded, color: AppColors.danger, subtitle: 'Beban biaya operasional')),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: _buildStatCard(
-                    title: 'Total Pengeluaran',
-                    amount: _currencyFormat.format(_totalOut),
-                    icon: Icons.arrow_upward_rounded,
-                    color: AppColors.danger,
-                    subtitle: 'Beban biaya operasional',
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: _buildStatCard(
-                    title: 'Saldo Kas Bersih',
-                    amount: _currencyFormat.format(_netCash),
-                    icon: Icons.account_balance_wallet_outlined,
-                    color: AppColors.primary,
-                    subtitle: 'Selisih Pemasukan & Pengeluaran',
-                  ),
-                ),
-              ],
-            ),
+                  const SizedBox(height: 12),
+                  _buildStatCard(title: 'Saldo Kas Bersih', amount: _currencyFormat.format(_netCash), icon: Icons.account_balance_wallet_outlined, color: AppColors.primary, subtitle: 'Selisih Pemasukan & Pengeluaran'),
+                ],
+              )
+            else
+              Row(
+                children: [
+                  Expanded(child: _buildStatCard(title: 'Total Pemasukan', amount: _currencyFormat.format(_totalIn), icon: Icons.arrow_downward_rounded, color: AppColors.success, subtitle: 'Uang masuk non-penjualan')),
+                  const SizedBox(width: 20),
+                  Expanded(child: _buildStatCard(title: 'Total Pengeluaran', amount: _currencyFormat.format(_totalOut), icon: Icons.arrow_upward_rounded, color: AppColors.danger, subtitle: 'Beban biaya operasional')),
+                  const SizedBox(width: 20),
+                  Expanded(child: _buildStatCard(title: 'Saldo Kas Bersih', amount: _currencyFormat.format(_netCash), icon: Icons.account_balance_wallet_outlined, color: AppColors.primary, subtitle: 'Selisih Pemasukan & Pengeluaran')),
+                ],
+              ),
             const SizedBox(height: 24),
 
             // List of movements

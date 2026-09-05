@@ -7,6 +7,7 @@ import 'widgets/stat_cards.dart';
 import 'widgets/recent_transactions.dart';
 import 'widgets/action_needed_list.dart';
 import 'widgets/sales_chart.dart';
+import '../utils/responsive_utils.dart';
 
 import 'widgets/today_financial_summary.dart';
 
@@ -97,71 +98,103 @@ class _DashboardContentState extends State<DashboardContent> {
 
   @override
   Widget build(BuildContext context) {
+    final isPhoneScreen = isPhone(context);
+    final gap = responsiveGap(context);
+
     return Padding(
-      padding: const EdgeInsets.all(32.0),
+      padding: responsivePadding(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Header(),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              _buildPeriodSelector(),
-            ],
+          SizedBox(height: isPhoneScreen ? 12 : 16),
+          Align(
+            alignment: Alignment.centerRight,
+            child: _buildPeriodSelector(),
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: isPhoneScreen ? 12 : 14),
           Expanded(
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: RepaintBoundary(
+                  if (isPhoneScreen)
+                    // Phone: single column, vertical stack
+                    Column(
+                      children: [
+                        RepaintBoundary(
                           child: StatCardsGrid(startDate: _startDate, endDate: _endDate),
                         ),
-                      ),
-                      const SizedBox(width: 24),
-                      Expanded(
-                        flex: 2,
-                        child: RepaintBoundary(
+                        SizedBox(height: gap),
+                        RepaintBoundary(
                           child: TodayFinancialSummary(startDate: _startDate, endDate: _endDate),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: RepaintBoundary(
+                        SizedBox(height: gap),
+                        RepaintBoundary(
                           child: SalesChart(startDate: _startDate, endDate: _endDate),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: RepaintBoundary(
+                        SizedBox(height: gap),
+                        RepaintBoundary(
                           child: RecentTransactions(startDate: _startDate, endDate: _endDate),
                         ),
-                      ),
-                      const SizedBox(width: 24),
-                      const Expanded(
-                        flex: 2,
-                        child: RepaintBoundary(
+                        SizedBox(height: gap),
+                        const RepaintBoundary(
                           child: ActionNeededList(),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    )
+                  else
+                    // Tablet/Desktop: multi-column layout
+                    Column(
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: RepaintBoundary(
+                                child: StatCardsGrid(startDate: _startDate, endDate: _endDate),
+                              ),
+                            ),
+                            SizedBox(width: gap),
+                            Expanded(
+                              flex: 2,
+                              child: RepaintBoundary(
+                                child: TodayFinancialSummary(startDate: _startDate, endDate: _endDate),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: gap),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: RepaintBoundary(
+                                child: SalesChart(startDate: _startDate, endDate: _endDate),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: gap),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: RepaintBoundary(
+                                child: RecentTransactions(startDate: _startDate, endDate: _endDate),
+                              ),
+                            ),
+                            SizedBox(width: gap),
+                            const Expanded(
+                              flex: 2,
+                              child: RepaintBoundary(
+                                child: ActionNeededList(),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                 ],
               ),
             ),

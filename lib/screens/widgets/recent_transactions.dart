@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../theme/app_colors.dart';
 import '../../database/database_helper.dart';
 import '../../services/auth_service.dart';
+import '../../utils/responsive_utils.dart';
 
 class RecentTransactions extends StatefulWidget {
   const RecentTransactions({super.key, this.startDate, this.endDate});
@@ -269,8 +270,9 @@ class _RecentTransactionsState extends State<RecentTransactions> {
 
   @override
   Widget build(BuildContext context) {
+    final isPhoneScreen = isPhone(context);
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: responsiveCardPadding(context),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -284,7 +286,7 @@ class _RecentTransactionsState extends State<RecentTransactions> {
               Text(
                 'Recent Transactions',
                 style: GoogleFonts.outfit(
-                  fontSize: 16,
+                  fontSize: isPhoneScreen ? 14 : 16,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textDark,
                 ),

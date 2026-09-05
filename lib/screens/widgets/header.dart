@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../theme/app_colors.dart';
 import '../../services/notification_service.dart';
 import '../../main.dart';
+import '../../utils/responsive_utils.dart';
 
 class Header extends StatefulWidget {
   final String? title;
@@ -17,7 +18,8 @@ class _HeaderState extends State<Header> {
   List<AppNotification> _notifications = [];
   bool _isLoading = false;
 
-  final _dateFormat = DateFormat('EEEE, d MMMM yyyy');
+  final _dateFormatFull = DateFormat('EEEE, d MMMM yyyy');
+  final _dateFormatShort = DateFormat('d MMM yyyy');
 
   @override
   void initState() {
@@ -133,7 +135,9 @@ class _HeaderState extends State<Header> {
 
   @override
   Widget build(BuildContext context) {
-    final todayStr = _dateFormat.format(DateTime.now());
+    final todayStr = _dateFormatFull.format(DateTime.now());
+    final isPhoneScreen = isPhone(context);
+    final dateStr = isPhoneScreen ? _dateFormatShort.format(DateTime.now()) : todayStr;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -144,62 +148,66 @@ class _HeaderState extends State<Header> {
             Text(
               widget.title ?? 'Sales Report',
               style: GoogleFonts.outfit(
-                fontSize: 28,
+                fontSize: responsiveFontSize(context, desktop: 28, tablet: 24, phone: 20),
                 fontWeight: FontWeight.bold,
                 color: AppColors.textDark,
               ),
             ),
             const SizedBox(height: 4),
             Text(
-              todayStr,
+              dateStr,
               style: GoogleFonts.outfit(
-                fontSize: 14,
+                fontSize: isPhoneScreen ? 12 : 14,
                 color: AppColors.textLight,
               ),
             ),
           ],
         ),
         const Spacer(),
-        _buildIconButton(Icons.search, onTap: () {
-          // Search functionality if needed
-        }),
-        const SizedBox(width: 16),
+        if (!isPhoneScreen) ...[
+          _buildIconButton(Icons.search, onTap: () {
+            // Search functionality if needed
+          }),
+          const SizedBox(width: 16),
+        ],
         _buildIconButton(
           Icons.notifications_none,
           hasBadge: _notifications.any((n) => !n.isSeen),
           badgeCount: _notifications.where((n) => !n.isSeen).length,
           onTap: _showNotificationDialog,
         ),
-        const SizedBox(width: 24),
-        Row(
-          children: [
-            const CircleAvatar(
-              radius: 20,
-              backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=47'), // Placeholder image
-            ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Ferra Alexandra',
-                  style: GoogleFonts.outfit(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textDark,
+        if (!isPhoneScreen) ...[
+          const SizedBox(width: 24),
+          Row(
+            children: [
+              const CircleAvatar(
+                radius: 20,
+                backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=47'), // Placeholder image
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Ferra Alexandra',
+                    style: GoogleFonts.outfit(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
+                    ),
                   ),
-                ),
-                Text(
-                  'Admin store',
-                  style: GoogleFonts.outfit(
-                    fontSize: 12,
-                    color: AppColors.textLight,
+                  Text(
+                    'Admin store',
+                    style: GoogleFonts.outfit(
+                      fontSize: 12,
+                      color: AppColors.textLight,
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
-        ),
+                ],
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }

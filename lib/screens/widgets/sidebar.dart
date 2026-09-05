@@ -13,11 +13,13 @@ import '../../models/shift.dart';
 class Sidebar extends StatelessWidget {
   final int selectedIndex;
   final Function(int) onMenuTap;
+  final bool compact;
 
   const Sidebar({
     super.key,
     required this.selectedIndex,
     required this.onMenuTap,
+    this.compact = false,
   });
 
   @override
@@ -25,106 +27,127 @@ class Sidebar extends StatelessWidget {
     final auth = AuthService();
     final userRole = (auth.role ?? '').toLowerCase();
     final isKasir = userRole == 'kasir' || userRole == 'cashier' || userRole == 'kasir utama' || userRole == 'cashier utama';
+
+    final menuItems = _buildMenuItems(context, auth, isKasir);
+
     return Container(
-      width: 250,
+      width: compact ? 200 : 250,
       color: AppColors.sidebar,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 32),
+          SizedBox(height: compact ? 20 : 32),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            padding: EdgeInsets.symmetric(horizontal: compact ? 16 : 24.0),
             child: Row(
               children: [
                 Image.asset(
                   'assets/logo/Minimalist Red Shopping Cart Logo.png',
-                  width: 32,
-                  height: 32,
+                  width: compact ? 28 : 32,
+                  height: compact ? 28 : 32,
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  'DashDock',
-                  style: GoogleFonts.outfit(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textDark,
+                if (!compact)
+                  Text(
+                    'DashDock',
+                    style: GoogleFonts.outfit(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
+                    ),
                   ),
-                ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Text(
-              'Logged in as: ${auth.currentUser?['username'] ?? 'User'}\nRole: ${auth.role ?? 'Unknown'}',
-              style: GoogleFonts.outfit(fontSize: 12, color: AppColors.textLight),
+          if (!compact) ...[
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Text(
+                'Logged in as: ${auth.currentUser?['username'] ?? 'User'}\nRole: ${auth.role ?? 'Unknown'}',
+                style: GoogleFonts.outfit(fontSize: 12, color: AppColors.textLight),
+              ),
             ),
-          ),
+          ],
           const SizedBox(height: 24),
           Expanded(
             child: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildMenuSection('MENU'),
-                  if (!isKasir && auth.hasPermission('dashboard', 'view')) _buildMenuItem(Icons.dashboard_outlined, 'Dashboard', 0),
-                  if (auth.hasPermission('pos', 'view')) _buildMenuItem(Icons.point_of_sale_outlined, 'POS / Kasir', 1),
-                  _buildMenuItem(
-                    Icons.schedule_outlined,
-                    'Shift Kasir',
-                    13,
-                    trailing: ValueListenableBuilder<CashShift?>(
-                      valueListenable: ShiftService.instance.activeShiftNotifier,
-                      builder: (context, shift, _) {
-                        if (shift == null) return const SizedBox.shrink();
-                        return Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppColors.success,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            'AKTIF',
-                            style: GoogleFonts.outfit(
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  if (!isKasir && auth.hasPermission('products', 'view')) _buildMenuItem(Icons.shopping_cart_outlined, 'Products', 2),
-                  if (!isKasir && auth.hasPermission('products', 'view')) _buildMenuItem(Icons.bar_chart_outlined, 'Bulk Barcode', 14),
-                  if (!isKasir && auth.hasPermission('inventory', 'view')) _buildMenuItem(Icons.inventory_outlined, 'Inventory (Restock)', 3),
-                  if (!isKasir) ...[
-                    _buildMenuSection('FINANCIAL'),
-                    if (auth.hasPermission('transactions', 'view')) _buildMenuItem(Icons.account_balance_wallet_outlined, 'Transactions', 4),
-                    if (auth.hasPermission('transactions', 'view')) _buildMenuItem(Icons.swap_horiz_outlined, 'Arus Kas (In / Out)', 5),
-                    if (auth.hasPermission('reports', 'view')) _buildMenuItem(Icons.bar_chart_outlined, 'Laporan Bisnis', 10),
-                    const SizedBox(height: 24),
-                    _buildMenuSection('MASTER DATA'),
-                    if (auth.hasPermission('products', 'view')) _buildMenuItem(Icons.business_outlined, 'Suppliers', 8),
-                    if (auth.hasPermission('products', 'view')) _buildMenuItem(Icons.category_outlined, 'Categories', 9),
-                    const SizedBox(height: 24),
-                    _buildMenuSection('TOOLS'),
-                    if (auth.hasPermission('users', 'view')) _buildMenuItem(Icons.people_outline, 'Users', 6),
-                    if (auth.hasPermission('settings', 'view')) _buildMenuItem(Icons.settings_outlined, 'Settings', 7),
-                    if (auth.hasPermission('settings', 'view')) _buildMenuItem(Icons.backup_outlined, 'Backup & Restore', 11),
-                    if (auth.hasPermission('reports', 'view')) _buildMenuItem(Icons.history_outlined, 'Audit Trail', 12),
-                  ],
-                ],
+                children: menuItems,
               ),
             ),
           ),
-          _buildThemeToggle(context),
-          _buildLogoutCard(context),
-          const SizedBox(height: 32),
+          if (!compact) _buildThemeToggle(context),
+          if (!compact) _buildLogoutCard(context),
+          if (compact) _buildCompactLogout(context),
+          SizedBox(height: compact ? 16 : 32),
         ],
       ),
     );
+  }
+
+  List<Widget> _buildMenuItems(BuildContext context, AuthService auth, bool isKasir) {
+    final List<Widget> items = [];
+
+    void addSection(String title) {
+      items.add(_buildMenuSection(title));
+    }
+
+    void addItem(IconData icon, String title, int index, {Widget? trailing}) {
+      items.add(_buildMenuItem(icon, title, index, trailing: trailing));
+    }
+
+    addSection('MENU');
+    if (!isKasir && auth.hasPermission('dashboard', 'view')) addItem(Icons.dashboard_outlined, 'Dashboard', 0);
+    if (auth.hasPermission('pos', 'view')) addItem(Icons.point_of_sale_outlined, 'POS / Kasir', 1);
+    addItem(
+      Icons.schedule_outlined,
+      'Shift Kasir',
+      13,
+      trailing: ValueListenableBuilder<CashShift?>(
+        valueListenable: ShiftService.instance.activeShiftNotifier,
+        builder: (context, shift, _) {
+          if (shift == null) return const SizedBox.shrink();
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: AppColors.success,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              'AKTIF',
+              style: GoogleFonts.outfit(
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+    if (!isKasir && auth.hasPermission('products', 'view')) addItem(Icons.shopping_cart_outlined, 'Products', 2);
+    if (!isKasir && auth.hasPermission('products', 'view')) addItem(Icons.bar_chart_outlined, 'Bulk Barcode', 14);
+    if (!isKasir && auth.hasPermission('inventory', 'view')) addItem(Icons.inventory_outlined, 'Inventory (Restock)', 3);
+    if (!isKasir) {
+      addSection('FINANCIAL');
+      if (auth.hasPermission('transactions', 'view')) addItem(Icons.account_balance_wallet_outlined, 'Transactions', 4);
+      if (auth.hasPermission('transactions', 'view')) addItem(Icons.swap_horiz_outlined, 'Arus Kas (In / Out)', 5);
+      if (auth.hasPermission('reports', 'view')) addItem(Icons.bar_chart_outlined, 'Laporan Bisnis', 10);
+      items.add(const SizedBox(height: 24));
+      addSection('MASTER DATA');
+      if (auth.hasPermission('products', 'view')) addItem(Icons.business_outlined, 'Suppliers', 8);
+      if (auth.hasPermission('products', 'view')) addItem(Icons.category_outlined, 'Categories', 9);
+      items.add(const SizedBox(height: 24));
+      addSection('TOOLS');
+      if (auth.hasPermission('users', 'view')) addItem(Icons.people_outline, 'Users', 6);
+      if (auth.hasPermission('settings', 'view')) addItem(Icons.settings_outlined, 'Settings', 7);
+      if (auth.hasPermission('settings', 'view')) addItem(Icons.backup_outlined, 'Backup & Restore', 11);
+      if (auth.hasPermission('reports', 'view')) addItem(Icons.history_outlined, 'Audit Trail', 12);
+    }
+
+    return items;
   }
 
   Widget _buildMenuSection(String title) {
@@ -273,6 +296,65 @@ class Sidebar extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCompactLogout(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: GestureDetector(
+        onTap: () async {
+          final userId = AuthService().currentUser?['id'] ?? 1;
+          await DatabaseHelper.instance.logActivity('LOGOUT', 'auth', 'User logged out', userId: userId);
+          AuthService().logout();
+          if (!context.mounted) return;
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+            (route) => false,
+          );
+        },
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.danger.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.logout, color: AppColors.danger, size: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A drawer version of the sidebar for mobile/tablet
+class SidebarDrawer extends StatelessWidget {
+  final int selectedIndex;
+  final Function(int) onMenuTap;
+
+  const SidebarDrawer({
+    super.key,
+    required this.selectedIndex,
+    required this.onMenuTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      child: SafeArea(
+        child: Sidebar(
+          selectedIndex: selectedIndex,
+          onMenuTap: (index) {
+            Navigator.pop(context);
+            onMenuTap(index);
+          },
         ),
       ),
     );

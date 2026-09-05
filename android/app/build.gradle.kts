@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.customerbandung"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

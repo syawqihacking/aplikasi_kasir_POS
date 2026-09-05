@@ -71,6 +71,10 @@ class MyApp extends StatelessWidget {
             scaffoldBackgroundColor: const Color(0xFF121212),
           ),
           builder: (context, child) {
+            // Sembunyikan chatbot di mobile (Android/iOS)
+            if (Platform.isAndroid || Platform.isIOS) {
+              return child!;
+            }
             return SmartAssistantOverlay(child: child!);
           },
           home: const LoginScreen(),

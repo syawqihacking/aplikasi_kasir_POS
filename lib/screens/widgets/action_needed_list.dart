@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../database/database_helper.dart';
+import '../../utils/responsive_utils.dart';
 
 class ActionNeededList extends StatefulWidget {
   const ActionNeededList({super.key});
@@ -33,8 +34,9 @@ class _ActionNeededListState extends State<ActionNeededList> {
 
   @override
   Widget build(BuildContext context) {
+    final isPhoneScreen = isPhone(context);
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: responsiveCardPadding(context),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -48,7 +50,7 @@ class _ActionNeededListState extends State<ActionNeededList> {
               Text(
                 'Action Needed',
                 style: GoogleFonts.outfit(
-                  fontSize: 16,
+                  fontSize: isPhoneScreen ? 14 : 16,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textDark,
                 ),
@@ -83,8 +85,8 @@ class _ActionNeededListState extends State<ActionNeededList> {
                     leading: const Icon(Icons.warning_amber_rounded, color: AppColors.danger),
                     title: Text(p['name'], style: GoogleFonts.outfit(fontSize: 14), overflow: TextOverflow.ellipsis),
                     trailing: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 130),
-                      child: Text('Stock: ${p['current_stock']} / Min: ${p['min_stock']}', style: GoogleFonts.outfit(color: AppColors.danger, fontWeight: FontWeight.bold, fontSize: 12), overflow: TextOverflow.ellipsis),
+                      constraints: BoxConstraints(maxWidth: isPhoneScreen ? 100 : 130),
+                      child: Text('Stock: ${p['current_stock']} / Min: ${p['min_stock']}', style: GoogleFonts.outfit(color: AppColors.danger, fontWeight: FontWeight.bold, fontSize: isPhoneScreen ? 10 : 12), overflow: TextOverflow.ellipsis),
                     ),
                   );
                 },

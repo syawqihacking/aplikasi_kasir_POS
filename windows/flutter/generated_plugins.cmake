@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
+  flutter_classic_bluetooth
   printing
   url_launcher_windows
 )

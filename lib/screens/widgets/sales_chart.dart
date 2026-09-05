@@ -72,20 +72,25 @@ class _SalesChartState extends State<SalesChart> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  widget.startDate != null && widget.endDate != null
-                      ? 'Grafik Penjualan & Stok Masuk (Periode)'
-                      : 'Grafik Penjualan & Stok Masuk (7 Hari)',
-                  style: GoogleFonts.outfit(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textDark,
+                Expanded(
+                  child: Text(
+                    widget.startDate != null && widget.endDate != null
+                        ? 'Grafik Penjualan & Stok Masuk (Periode)'
+                        : 'Grafik Penjualan & Stok Masuk (7 Hari)',
+                    style: GoogleFonts.outfit(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                const SizedBox(width: 8),
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     _buildLegendItem('Penjualan', AppColors.primary),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
                     _buildLegendItem('Stok Masuk', AppColors.warning),
                     const SizedBox(width: 12),
                     InkWell(

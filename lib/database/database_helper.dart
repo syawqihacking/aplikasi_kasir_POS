@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:sqflite/sqflite.dart';
 import '../services/telegram_service.dart';
 import '../services/export_service.dart';
 import '../services/supabase_sync_service.dart';
@@ -132,7 +132,6 @@ class DatabaseHelper {
   }
 
   Future<String> getDatabasePath() async {
-    final databaseFactory = databaseFactoryFfi;
     final dbPath = await databaseFactory.getDatabasesPath();
     return join(dbPath, 'pos_desktop.db');
   }
@@ -149,11 +148,6 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDB(String filePath) async {
-    if (Platform.isWindows || Platform.isLinux) {
-      sqfliteFfiInit();
-    }
-    
-    final databaseFactory = databaseFactoryFfi;
     final dbPath = await databaseFactory.getDatabasesPath();
     final path = join(dbPath, filePath);
 

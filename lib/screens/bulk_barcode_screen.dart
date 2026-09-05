@@ -6,6 +6,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../theme/app_colors.dart';
+import '../utils/responsive_utils.dart';
 
 class BulkBarcodeScreen extends StatefulWidget {
   const BulkBarcodeScreen({super.key});
@@ -51,114 +52,188 @@ class _BulkBarcodeScreenState extends State<BulkBarcodeScreen> {
     showDialog(context: context, builder: (_) => _PreviewDialog(entries: _history, total: total));
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
+    final isPhoneScreen = isPhone(context);
     return Padding(
-      padding: const EdgeInsets.all(32),
-      child: Row(
-        children: [
-          // Input card
-          SizedBox(
-            width: 400,
-            child: Card(
-              elevation: 1,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('Input Barcode', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 16),
-                    Row(
+      padding: responsivePadding(context),
+      child: isPhoneScreen
+          ? _buildPhoneLayout()
+          : Row(
+            children: [
+              // Input card
+              SizedBox(
+                width: 400,
+                child: Card(
+                  elevation: 1,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Switch(value: _autoGenerate, onChanged: (v) => setState(() => _autoGenerate = v), activeThumbColor: AppColors.primary),
-                        Text('Auto-generate', style: GoogleFonts.outfit(fontSize: 14)),
+                        Text('Input Barcode', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Switch(value: _autoGenerate, onChanged: (v) => setState(() => _autoGenerate = v), activeThumbColor: AppColors.primary),
+                            Text('Auto-generate', style: GoogleFonts.outfit(fontSize: 14)),
+                          ],
+                        ),
+                        if (_autoGenerate) ...[
+                          const SizedBox(height: 12),
+                          Text('Prefix', style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 6),
+                          TextField(controller: _prefixController, decoration: _dec('200'), keyboardType: TextInputType.number, inputFormatters: [FilteringTextInputFormatter.digitsOnly]),
+                        ],
+                        if (!_autoGenerate) ...[
+                          const SizedBox(height: 12),
+                          Text('Nomor Barcode', style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 6),
+                          TextField(controller: _barcodeController, decoration: _dec('Masukkan barcode')),
+                        ],
+                        const SizedBox(height: 12),
+                        Text('Jumlah Label', style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 6),
+                        TextField(controller: _quantityController, decoration: _dec('1'), keyboardType: TextInputType.number, inputFormatters: [FilteringTextInputFormatter.digitsOnly]),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity, height: 44,
+                          child: ElevatedButton(
+                            onPressed: _add,
+                            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                            child: Text('Tambah', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
+                          ),
+                        ),
                       ],
                     ),
-                    if (_autoGenerate) ...[
-                      const SizedBox(height: 12),
-                      Text('Prefix', style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 6),
-                      TextField(controller: _prefixController, decoration: _dec('200'), keyboardType: TextInputType.number, inputFormatters: [FilteringTextInputFormatter.digitsOnly]),
-                    ],
-                    if (!_autoGenerate) ...[
-                      const SizedBox(height: 12),
-                      Text('Nomor Barcode', style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 6),
-                      TextField(controller: _barcodeController, decoration: _dec('Masukkan barcode')),
-                    ],
-                    const SizedBox(height: 12),
-                    Text('Jumlah Label', style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 6),
-                    TextField(controller: _quantityController, decoration: _dec('1'), keyboardType: TextInputType.number, inputFormatters: [FilteringTextInputFormatter.digitsOnly]),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity, height: 44,
-                      child: ElevatedButton(
-                        onPressed: _add,
-                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                        child: Text('Tambah', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 24),
+              // History list
+              Expanded(child: _buildHistoryList()),
+            ],
+          ),
+    );
+  }
+
+  Widget _buildPhoneLayout() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Bulk Barcode',
+          style: GoogleFonts.outfit(
+            fontSize: responsiveFontSize(context, desktop: 28, tablet: 24, phone: 20),
+            fontWeight: FontWeight.bold,
+            color: AppColors.textDark,
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Input card full width
+        Card(
+          elevation: 1,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Input Barcode', style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Switch(value: _autoGenerate, onChanged: (v) => setState(() => _autoGenerate = v), activeThumbColor: AppColors.primary),
+                    Text('Auto-generate', style: GoogleFonts.outfit(fontSize: 13)),
+                  ],
+                ),
+                if (_autoGenerate) ...[
+                  const SizedBox(height: 8),
+                  Text('Prefix', style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  TextField(controller: _prefixController, decoration: _dec('200'), keyboardType: TextInputType.number, inputFormatters: [FilteringTextInputFormatter.digitsOnly]),
+                ],
+                if (!_autoGenerate) ...[
+                  const SizedBox(height: 8),
+                  Text('Nomor Barcode', style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  TextField(controller: _barcodeController, decoration: _dec('Masukkan barcode')),
+                ],
+                const SizedBox(height: 8),
+                Text('Jumlah Label', style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                TextField(controller: _quantityController, decoration: _dec('1'), keyboardType: TextInputType.number, inputFormatters: [FilteringTextInputFormatter.digitsOnly]),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity, height: 44,
+                  child: ElevatedButton(
+                    onPressed: _add,
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                    child: Text('Tambah', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Expanded(child: _buildHistoryList()),
+      ],
+    );
+  }
+
+  Widget _buildHistoryList() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('History (${_history.length})', style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_history.isNotEmpty) ...[
+                  TextButton(onPressed: _clearAll, child: const Text('Clear All', style: TextStyle(color: AppColors.danger))),
+                  const SizedBox(width: 8),
+                ],
+                ElevatedButton.icon(
+                  onPressed: _history.isEmpty ? null : _print,
+                  icon: const Icon(Icons.print, size: 18, color: Colors.white),
+                  label: Text('Print', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Expanded(
+          child: _history.isEmpty
+              ? Center(child: Text('Belum ada barcode.', style: GoogleFonts.outfit(color: AppColors.textLight)))
+              : ListView.builder(
+                  itemCount: _history.length,
+                  itemBuilder: (_, i) {
+                    final e = _history[i];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: ListTile(
+                        title: Text(e.bc, style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
+                        subtitle: Text('Jumlah: ${e.qty}', style: GoogleFonts.outfit(color: AppColors.textLight, fontSize: 12)),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete_outline, color: AppColors.danger, size: 20),
+                          onPressed: () => _remove(i),
+                        ),
                       ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 24),
-          // Queue card
-          Expanded(
-            child: Card(
-              elevation: 1,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Daftar Cetak', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold)),
-                        if (_history.isNotEmpty)
-                          Row(children: [
-                            TextButton(onPressed: _clearAll, child: const Text('Hapus Semua', style: TextStyle(color: AppColors.danger))),
-                            const SizedBox(width: 8),
-                            ElevatedButton.icon(
-                              onPressed: _print,
-                              icon: const Icon(Icons.print, color: Colors.white, size: 18),
-                              label: Text('Cetak (${_history.fold<int>(0, (s, e) => s + e.qty)})', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
-                              style: ElevatedButton.styleFrom(backgroundColor: AppColors.success, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                            ),
-                          ]),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Expanded(
-                      child: _history.isEmpty
-                          ? Center(child: Text('Belum ada barcode', style: GoogleFonts.outfit(color: AppColors.textLight)))
-                          : ListView.builder(
-                              itemCount: _history.length,
-                              itemBuilder: (ctx, i) {
-                                final e = _history[i];
-                                return ListTile(
-                                  leading: Icon(Icons.qr_code, color: AppColors.primary),
-                                  title: Text(e.bc, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, letterSpacing: 1.5)),
-                                  subtitle: Text('×${e.qty} label', style: GoogleFonts.outfit(fontSize: 12)),
-                                  trailing: IconButton(icon: const Icon(Icons.close, size: 18), onPressed: () => _remove(i)),
-                                );
-                              },
-                            ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

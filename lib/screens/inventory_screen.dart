@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
 import '../database/database_helper.dart';
 import '../services/scanner_service.dart';
+import '../utils/responsive_utils.dart';
 
 import 'inventory/stock_out_tab.dart';
 import 'inventory/stock_opname_tab.dart';
@@ -13,13 +14,14 @@ class InventoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isPhoneScreen = isPhone(context);
     return DefaultTabController(
       length: 4,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(24.0),
+            padding: EdgeInsets.all(isPhoneScreen ? 16 : 24.0),
             color: Colors.white,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -27,7 +29,7 @@ class InventoryScreen extends StatelessWidget {
                 Text(
                   'Manajemen Stok',
                   style: GoogleFonts.outfit(
-                    fontSize: 28,
+                    fontSize: responsiveFontSize(context, desktop: 28, tablet: 24, phone: 20),
                     fontWeight: FontWeight.bold,
                     color: AppColors.textDark,
                   ),
@@ -266,7 +268,7 @@ class _InventoryRestockTabState extends State<InventoryRestockTab> {
     }
 
     return Padding(
-      padding: const EdgeInsets.all(32.0),
+      padding: responsivePadding(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -299,7 +301,7 @@ class _InventoryRestockTabState extends State<InventoryRestockTab> {
               child: _products.isEmpty
                   ? Center(child: Text('No products in inventory.', style: GoogleFonts.outfit(color: AppColors.textLight)))
                   : ListView.builder(
-                      padding: const EdgeInsets.all(24),
+                      padding: responsiveCardPadding(context),
                       itemCount: _products.length,
                       itemBuilder: (context, index) {
                         final product = _products[index];
