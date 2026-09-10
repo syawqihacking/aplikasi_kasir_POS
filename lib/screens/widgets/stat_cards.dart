@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../database/database_helper.dart';
 import 'package:intl/intl.dart';
-import '../../utils/responsive_utils.dart';
 
 class StatCardsGrid extends StatefulWidget {
   const StatCardsGrid({super.key, this.startDate, this.endDate});
@@ -67,82 +66,6 @@ class _StatCardsGridState extends State<StatCardsGrid> {
   @override
   Widget build(BuildContext context) {
     final bool isPeriod = widget.startDate != null && widget.endDate != null;
-    final bool isPhoneScreen = isPhone(context);
-    final gap = responsiveGap(context);
-    
-    if (isPhoneScreen) {
-      return Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  title: 'Pendapatan Kotor',
-                  value: _currencyFormat.format(_todayGross),
-                  icon: Icons.receipt_long,
-                  isPrimary: true,
-                  subtitle: isPeriod ? 'Total penjualan periode' : 'Total penjualan hari ini',
-                ),
-              ),
-              SizedBox(width: gap),
-              Expanded(
-                child: _buildStatCard(
-                  title: 'Pendapatan Bersih',
-                  value: _currencyFormat.format(_todayNet),
-                  icon: Icons.attach_money,
-                  subtitle: isPeriod ? 'Profit periode' : 'Profit hari ini',
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: gap),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  title: 'Transaksi',
-                  value: '$_todayOrders',
-                  icon: Icons.shopping_basket_outlined,
-                  subtitle: isPeriod ? 'Jumlah order periode' : 'Jumlah order hari ini',
-                ),
-              ),
-              SizedBox(width: gap),
-              Expanded(
-                child: _buildStatCard(
-                  title: 'Pengeluaran',
-                  value: _currencyFormat.format(_todayExpense),
-                  icon: Icons.arrow_upward_rounded,
-                  subtitle: isPeriod ? 'Total pengeluaran periode' : 'Total pengeluaran hari ini',
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: gap),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  title: 'Total Produk',
-                  value: '$_totalProducts',
-                  icon: Icons.inventory_2_outlined,
-                  subtitle: '$_totalCategories Kategori | $_totalSuppliers Supplier',
-                ),
-              ),
-              SizedBox(width: gap),
-              Expanded(
-                child: _buildStatCard(
-                  title: 'Perlu Tindakan',
-                  value: '${_lowStockCount + _noBarcodeCount}',
-                  icon: Icons.warning_amber_rounded,
-                  isDanger: (_lowStockCount + _noBarcodeCount) > 0,
-                  subtitle: '$_lowStockCount stok menipis | $_noBarcodeCount tanpa barcode',
-                ),
-              ),
-            ],
-          ),
-        ],
-      );
-    }
     
     return Column(
       children: [
@@ -221,7 +144,6 @@ class _StatCardsGridState extends State<StatCardsGrid> {
     bool isPrimary = false,
     bool isDanger = false,
   }) {
-    final isPhoneScreen = isPhone(context);
     Color bgColor = Colors.white;
     Color textColor = AppColors.textDark;
     Color subtitleColor = AppColors.textLight;
@@ -242,7 +164,7 @@ class _StatCardsGridState extends State<StatCardsGrid> {
     }
 
     return Container(
-      padding: EdgeInsets.all(isPhoneScreen ? 12 : 20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(20),
@@ -263,42 +185,40 @@ class _StatCardsGridState extends State<StatCardsGrid> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: EdgeInsets.all(isPhoneScreen ? 6 : 10),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: iconBgColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: iconColor, size: isPhoneScreen ? 16 : 20),
+                child: Icon(icon, color: iconColor, size: 20),
               ),
             ],
           ),
-          SizedBox(height: isPhoneScreen ? 12 : 20),
+          const SizedBox(height: 20),
           Text(
             title,
             style: GoogleFonts.outfit(
-              fontSize: isPhoneScreen ? 11 : 14,
+              fontSize: 14,
               fontWeight: FontWeight.w500,
               color: subtitleColor,
             ),
           ),
-          SizedBox(height: isPhoneScreen ? 4 : 8),
+          const SizedBox(height: 8),
           Text(
             value,
             style: GoogleFonts.outfit(
-              fontSize: isPhoneScreen ? 20 : 28,
+              fontSize: 28,
               fontWeight: FontWeight.bold,
               color: textColor,
             ),
           ),
-          SizedBox(height: isPhoneScreen ? 2 : 4),
+          const SizedBox(height: 4),
           Text(
             subtitle,
             style: GoogleFonts.outfit(
-              fontSize: isPhoneScreen ? 10 : 12,
+              fontSize: 12,
               color: subtitleColor,
             ),
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
           ),
         ],
       ),

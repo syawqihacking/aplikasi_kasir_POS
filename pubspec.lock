@@ -222,14 +222,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_classic_bluetooth:
-    dependency: "direct main"
-    description:
-      name: flutter_classic_bluetooth
-      sha256: "24e2ef9df9266c9407d8af22248ad0ed088c45746e1a22be5efe037cef6fdfe2"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.0"
   flutter_lints:
     dependency: "direct dev"
     description:

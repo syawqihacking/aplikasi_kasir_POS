@@ -13,7 +13,6 @@ import '../theme/app_colors.dart';
 import '../database/database_helper.dart';
 import '../services/auth_service.dart';
 import '../services/scanner_service.dart';
-import '../utils/responsive_utils.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -274,7 +273,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     return Padding(
-      padding: responsivePadding(context),
+      padding: const EdgeInsets.all(32.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -283,7 +282,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               Text(
                 'Settings',
-                style: GoogleFonts.outfit(fontSize: responsiveFontSize(context, desktop: 28, tablet: 24, phone: 20), fontWeight: FontWeight.bold, color: AppColors.textDark),
+                style: GoogleFonts.outfit(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.textDark),
               ),
               ElevatedButton.icon(
                 onPressed: _isSaving ? null : _saveSettings,
@@ -300,7 +299,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 32),
           Expanded(
             child: Container(
-              padding: EdgeInsets.all(isPhone(context) ? 16 : 32),
+              padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),

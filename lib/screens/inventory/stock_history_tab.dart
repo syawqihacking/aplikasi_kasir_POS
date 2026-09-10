@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../theme/app_colors.dart';
 import '../../database/database_helper.dart';
-import '../../utils/responsive_utils.dart';
 
 class StockHistoryTab extends StatefulWidget {
   const StockHistoryTab({super.key});
@@ -43,14 +42,14 @@ class _StockHistoryTabState extends State<StockHistoryTab> {
     if (_isLoading) return const Center(child: CircularProgressIndicator());
 
     return Padding(
-      padding: responsivePadding(context),
+      padding: const EdgeInsets.all(32.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Riwayat Pergerakan Stok', style: GoogleFonts.outfit(fontSize: responsiveFontSize(context, desktop: 24, tablet: 22, phone: 18), fontWeight: FontWeight.bold, color: AppColors.textDark)),
+              Text('Riwayat Pergerakan Stok', style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.textDark)),
               IconButton(icon: const Icon(Icons.refresh), onPressed: _loadHistory),
             ],
           ),

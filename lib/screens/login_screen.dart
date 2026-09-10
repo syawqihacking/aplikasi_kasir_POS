@@ -6,7 +6,6 @@ import '../database/database_helper.dart';
 import '../services/auth_service.dart';
 import 'main_layout.dart';
 import '../main.dart';
-import '../utils/responsive_utils.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -75,6 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SnackBar(content: Text('Akun terkunci selama 5 menit'), backgroundColor: AppColors.danger),
             );
           }
+          // Reset after 5 min
           _lockoutTimer = Timer(const Duration(minutes: 5), () {
             if (mounted) {
               setState(() {
@@ -104,135 +104,119 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isPhoneScreen = isPhone(context);
-
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Center(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final maxWidth = constraints.maxWidth;
-              final cardWidth = isPhoneScreen ? (maxWidth - 32).clamp(0.0, 400.0) : 400.0;
-              
-              return SingleChildScrollView(
-                padding: EdgeInsets.all(isPhoneScreen ? 16 : 40),
-                child: Container(
-                  width: cardWidth,
-                  constraints: isPhoneScreen ? BoxConstraints(maxWidth: 400) : null,
-                  padding: EdgeInsets.all(isPhoneScreen ? 24 : 40),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  )
-                ],
+      body: Center(
+        child: Container(
+          width: 400,
+          padding: const EdgeInsets.all(40),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              )
+            ],
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.point_of_sale, size: 48, color: AppColors.primary),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.point_of_sale, 
-                    size: isPhoneScreen ? 40 : 48, 
-                    color: AppColors.primary,
-                  ),
+              const SizedBox(height: 24),
+              Text(
+                'Welcome Back',
+                style: GoogleFonts.outfit(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textDark,
                 ),
-                const SizedBox(height: 24),
-                Text(
-                  'Welcome Back',
-                  style: GoogleFonts.outfit(
-                    fontSize: responsiveFontSize(context, desktop: 28, tablet: 26, phone: 24),
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textDark,
-                  ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Sign in to DashDock POS',
+                style: GoogleFonts.outfit(
+                  fontSize: 14,
+                  color: AppColors.textLight,
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Sign in to DashDock POS',
-                  style: GoogleFonts.outfit(
-                    fontSize: isPhoneScreen ? 13 : 14,
-                    color: AppColors.textLight,
-                  ),
+              ),
+              const SizedBox(height: 40),
+              TextField(
+                controller: _usernameController,
+                decoration: InputDecoration(
+                  labelText: 'Username',
+                  hintText: 'Enter your username',
+                  prefixIcon: const Icon(Icons.person_outline),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                const SizedBox(height: 40),
-                TextField(
-                  controller: _usernameController,
-                  decoration: InputDecoration(
-                    labelText: 'Username',
-                    hintText: 'Enter your username',
-                    prefixIcon: const Icon(Icons.person_outline),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                onSubmitted: (_) => _handleLogin(),
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  hintText: 'Enter your password',
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
                   ),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  onSubmitted: (_) => _handleLogin(),
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    hintText: 'Enter your password',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
-                      },
+              ),
+              const SizedBox(height: 40),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _handleLogin,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                ),
-                const SizedBox(height: 40),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _handleLogin,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : Text(
-                            'Sign In',
-                            style: GoogleFonts.outfit(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : Text(
+                          'Sign In',
+                          style: GoogleFonts.outfit(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
-                  ),
+                        ),
                 ),
-                const SizedBox(height: 20),
-                Text(
-                  'Default logins: admin/admin123 or kasir/kasir123',
-                  style: GoogleFonts.outfit(
-                    fontSize: 12,
-                    color: AppColors.textLight,
-                  ),
-                )
-              ],
-            ),
-          );
-        },
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Default logins: admin/admin123 or kasir/kasir123',
+                style: GoogleFonts.outfit(
+                  fontSize: 12,
+                  color: AppColors.textLight,
+                ),
+              )
+            ],
+          ),
+        ),
       ),
     ),
-    ),
-    );
-  }
+  );
+}
 }

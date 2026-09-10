@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../theme/app_colors.dart';
 import '../../database/database_helper.dart';
-import '../../utils/responsive_utils.dart';
 
 class TodayFinancialSummary extends StatefulWidget {
   const TodayFinancialSummary({super.key, this.startDate, this.endDate});
@@ -168,9 +167,8 @@ class _TodayFinancialSummaryState extends State<TodayFinancialSummary> {
 
   @override
   Widget build(BuildContext context) {
-    final isPhoneScreen = isPhone(context);
     return Container(
-      padding: responsiveCardPadding(context),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppColors.darkCard,
         borderRadius: BorderRadius.circular(20),
@@ -191,7 +189,7 @@ class _TodayFinancialSummaryState extends State<TodayFinancialSummary> {
                           ? 'Ringkasan Keuangan Periode'
                           : 'Ringkasan Keuangan Hari Ini',
                       style: GoogleFonts.outfit(
-                        fontSize: isPhoneScreen ? 14 : 16,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
@@ -201,7 +199,7 @@ class _TodayFinancialSummaryState extends State<TodayFinancialSummary> {
                       Text(
                         '${_dateFormat.format(widget.startDate!)} - ${_dateFormat.format(widget.endDate!)}',
                         style: GoogleFonts.outfit(
-                          fontSize: isPhoneScreen ? 11 : 12,
+                          fontSize: 12,
                           color: Colors.white54,
                         ),
                       ),
@@ -241,12 +239,12 @@ class _TodayFinancialSummaryState extends State<TodayFinancialSummary> {
             
             Text(
               'Rincian per Pembayaran', 
-              style: GoogleFonts.outfit(color: Colors.white70, fontSize: isPhoneScreen ? 12 : 13, fontWeight: FontWeight.bold)
+              style: GoogleFonts.outfit(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold)
             ),
             const SizedBox(height: 10),
             Wrap(
-              spacing: isPhoneScreen ? 4 : 8,
-              runSpacing: isPhoneScreen ? 4 : 8,
+              spacing: 8,
+              runSpacing: 8,
               children: (_summary!['breakdown'] as Map<String, double>).entries.map((entry) {
                 IconData icon;
                 Color badgeColor;
@@ -272,7 +270,7 @@ class _TodayFinancialSummaryState extends State<TodayFinancialSummary> {
                     badgeColor = Colors.grey.shade400;
                 }
                 return Container(
-                  padding: EdgeInsets.symmetric(horizontal: isPhoneScreen ? 6 : 10, vertical: isPhoneScreen ? 4 : 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(10),
@@ -281,18 +279,15 @@ class _TodayFinancialSummaryState extends State<TodayFinancialSummary> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(icon, size: 12, color: badgeColor),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          '${entry.key}: ',
-                          style: GoogleFonts.outfit(color: Colors.white70, fontSize: 10),
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                      Icon(icon, size: 14, color: badgeColor),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${entry.key}: ',
+                        style: GoogleFonts.outfit(color: Colors.white70, fontSize: 11),
                       ),
                       Text(
                         _currencyFormat.format(entry.value),
-                        style: GoogleFonts.outfit(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                        style: GoogleFonts.outfit(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),

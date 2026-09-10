@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../database/database_helper.dart';
 import '../../services/scanner_service.dart';
-import '../../utils/responsive_utils.dart';
 
 class StockOutTab extends StatefulWidget {
   const StockOutTab({super.key});
@@ -119,13 +118,12 @@ class _StockOutTabState extends State<StockOutTab> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) return const Center(child: CircularProgressIndicator());
-    final isPhoneScreen = isPhone(context);
 
     return SingleChildScrollView(
-      padding: EdgeInsets.all(isPhoneScreen ? 16 : 24),
+      padding: const EdgeInsets.all(24),
       child: Container(
-        width: isPhoneScreen ? double.infinity : 600,
-        padding: responsiveCardPadding(context),
+        width: 600,
+        padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),

@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
 import '../database/database_helper.dart';
 import 'package:intl/intl.dart';
-import '../utils/responsive_utils.dart';
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -78,9 +77,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isPhoneScreen = isPhone(context);
     return Padding(
-      padding: responsivePadding(context),
+      padding: const EdgeInsets.all(32.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -90,17 +88,16 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               Text(
                 'Transaction History',
                 style: GoogleFonts.outfit(
-                  fontSize: responsiveFontSize(context, desktop: 28, tablet: 24, phone: 20),
+                  fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textDark,
                 ),
               ),
-              if (!isPhoneScreen)
-                ElevatedButton.icon(
-                  onPressed: _loadTransactions,
-                  icon: const Icon(Icons.refresh, color: Colors.white),
-                  label: Text(
-                    'Refresh',
+              ElevatedButton.icon(
+                onPressed: _loadTransactions,
+                icon: const Icon(Icons.refresh, color: Colors.white),
+                label: Text(
+                  'Refresh',
                   style: GoogleFonts.outfit(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,

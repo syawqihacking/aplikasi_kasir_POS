@@ -14,7 +14,6 @@ import '../services/import_export_service.dart';
 import 'widgets/add_product_dialog.dart';
 import 'widgets/print_barcode_dialog.dart';
 import '../main.dart';
-import '../utils/responsive_utils.dart';
 
 class ProductsScreen extends StatefulWidget {
   const ProductsScreen({super.key});
@@ -328,9 +327,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isPhoneScreen = isPhone(context);
     return Padding(
-      padding: responsivePadding(context),
+      padding: const EdgeInsets.all(32.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -340,7 +338,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
               Text(
                 'Products Management',
                 style: GoogleFonts.outfit(
-                  fontSize: responsiveFontSize(context, desktop: 28, tablet: 24, phone: 20),
+                  fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textDark,
                 ),
@@ -375,7 +373,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                     onPressed: () => _showAddProductDialog(),
                     icon: const Icon(Icons.add, color: Colors.white),
                     label: Text(
-                      isPhoneScreen ? 'Add' : 'Add New Product',
+                      'Add New Product',
                       style: GoogleFonts.outfit(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -383,7 +381,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
-                      padding: EdgeInsets.symmetric(horizontal: isPhoneScreen ? 16 : 24, vertical: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
