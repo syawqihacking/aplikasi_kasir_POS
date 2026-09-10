@@ -18,6 +18,10 @@ void main() async {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
+
+  // Arahkan DB ke folder writable (AppData) SEBELUM openDatabase pertama,
+  // agar jalan dari Program Files tanpa admin.
+  await DatabaseHelper.ensureStorageReady();
   
   // Run background/maintenance tasks
   await DatabaseHelper.instance.performDailyMaintenance();

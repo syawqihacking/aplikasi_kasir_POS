@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:path_provider/path_provider.dart';
 import '../services/telegram_service.dart';
 import '../services/export_service.dart';
 import '../services/supabase_sync_service.dart';
@@ -14,7 +15,49 @@ class DatabaseHelper {
 
   DatabaseHelper._init();
 
+  static bool _storageReady = false;
+
+  /// Wajib dipanggil sebelum openDatabase pertama (lihat main()).
+  /// Mengarahkan database ke getApplicationSupportDirectory() yang writable
+  /// tanpa admin, sehingga tidak lagi resolve ke Directory.current
+  /// (folder kerja installasi -> Access denied di Program Files).
+  static Future<void> ensureStorageReady() async {
+    if (_storageReady) return;
+    try {
+      if (Platform.isWindows || Platform.isLinux) {
+        // Catat lokasi lama SEBELUM setDatabasesPath (default ffi =
+        // folder databases relatif Directory.current).
+        String? legacyDbPath;
+        try {
+          final oldDir = await databaseFactory.getDatabasesPath();
+          legacyDbPath = join(oldDir, 'pos_desktop.db');
+        } catch (_) {}
+
+        final support = await getApplicationSupportDirectory();
+        await support.create(recursive: true);
+        await databaseFactory.setDatabasesPath(support.path);
+
+        // Migrasi ringan (copy, bukan move): jika db lama ada dan db baru belum ada.
+        try {
+          final newPath = join(support.path, 'pos_desktop.db');
+          if (legacyDbPath != null &&
+              legacyDbPath != newPath) {
+            final legacyFile = File(legacyDbPath);
+            final newFile = File(newPath);
+            if (await legacyFile.exists() && !await newFile.exists()) {
+              await legacyFile.copy(newPath);
+            }
+          }
+        } catch (_) {}
+      }
+    } catch (e) {
+      debugPrint('Storage init error: $e');
+    }
+    _storageReady = true;
+  }
+
   Future<Database> get database async {
+    await ensureStorageReady();
     if (_database != null) return _database!;
     _database = await _initDB('pos_desktop.db');
     return _database!;
@@ -55,7 +98,7 @@ class DatabaseHelper {
           if (txns.isNotEmpty) {
             final dbPath = await getDatabasePath();
             final reportDir = Directory(join(dirname(dbPath), 'reports'));
-            if (!await reportDir.exists()) await reportDir.create();
+            if (!await reportDir.exists()) await reportDir.create(recursive: true);
             final reportPath = join(reportDir.path, 'Daily_Report_$yesterdayStr.pdf');
             
             double totalSales = 0;
@@ -115,7 +158,7 @@ class DatabaseHelper {
         final file = File(dbPath);
         if (await file.exists()) {
           final backupDir = Directory(join(dirname(dbPath), 'backups'));
-          if (!await backupDir.exists()) await backupDir.create();
+          if (!await backupDir.exists()) await backupDir.create(recursive: true);
           final backupFile = join(backupDir.path, 'dashdock_auto_backup_$todayStr.db');
           final savedFile = await file.copy(backupFile);
           
@@ -132,6 +175,7 @@ class DatabaseHelper {
   }
 
   Future<String> getDatabasePath() async {
+    await ensureStorageReady();
     final dbPath = await databaseFactory.getDatabasesPath();
     return join(dbPath, 'pos_desktop.db');
   }
@@ -148,6 +192,7 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDB(String filePath) async {
+    await ensureStorageReady();
     final dbPath = await databaseFactory.getDatabasesPath();
     final path = join(dbPath, filePath);
 
